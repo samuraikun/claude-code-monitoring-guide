@@ -1,0 +1,286 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": { "type": "grafana", "uid": "-- Grafana --" },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "datasource": { "type": "loki", "uid": "loki-datasource" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "fillOpacity": 80, "lineWidth": 1, "hideFrom": { "legend": false, "tooltip": false, "viz": false } }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "id": 1,
+      "options": {
+        "barWidth": 0.6,
+        "groupWidth": 0.7,
+        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true },
+        "orientation": "auto",
+        "showValue": "auto",
+        "tooltip": { "mode": "single", "sort": "none" },
+        "xTickLabelRotation": -45,
+        "xTickLabelSpacing": 100
+      },
+      "targets": [
+        {
+          "datasource": { "type": "loki", "uid": "loki-datasource" },
+          "expr": "sum by (tool_name) (count_over_time({service_name=\"claude-code\"} | json | drop __error__, __error_details__ | event_name=`tool_result` [$__range]))",
+          "instant": true,
+          "legendFormat": "{{tool_name}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Tool Usage Distribution",
+      "description": "選択期間内にClaude Codeが使用した各ツールの総実行回数。Bash比率が高いほどプロンプトが曖昧な可能性あり。",
+      "type": "barchart"
+    },
+    {
+      "datasource": { "type": "loki", "uid": "loki-datasource" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 2, "fillOpacity": 10, "showPoints": "never" }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "Bash" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "orange", "mode": "fixed" } }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "All Tools" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "blue", "mode": "fixed" } }]
+          }
+        ]
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "id": 2,
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "none" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "loki", "uid": "loki-datasource" },
+          "expr": "sum(rate({service_name=\"claude-code\"} | json | drop __error__, __error_details__ | event_name=`tool_result` | tool_name=`Bash` [$__interval]))",
+          "legendFormat": "Bash",
+          "refId": "A"
+        },
+        {
+          "datasource": { "type": "loki", "uid": "loki-datasource" },
+          "expr": "sum(rate({service_name=\"claude-code\"} | json | drop __error__, __error_details__ | event_name=`tool_result` [$__interval]))",
+          "legendFormat": "All Tools",
+          "refId": "B"
+        }
+      ],
+      "title": "Bash vs Total Tool Executions (rate)",
+      "description": "Bashと全ツール実行の比率。Bashが多い期間はプロンプトの曖昧さやClaude Codeの指示違反の可能性がある。",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "loki", "uid": "loki-datasource" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "custom": { "align": "auto", "cellOptions": { "type": "auto" }, "filterable": true },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 0.05 },
+              { "color": "red", "value": 0.1 }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "Value #A" },
+            "properties": [
+              { "id": "displayName", "value": "Total Cost (USD)" },
+              { "id": "unit", "value": "currencyUSD" },
+              { "id": "decimals", "value": 4 }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "session_id" },
+            "properties": [{ "id": "displayName", "value": "Session ID" }]
+          }
+        ]
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "id": 3,
+      "options": {
+        "cellHeight": "sm",
+        "footer": { "show": false },
+        "showHeader": true,
+        "sortBy": [{ "desc": true, "displayName": "Total Cost (USD)" }]
+      },
+      "targets": [
+        {
+          "datasource": { "type": "loki", "uid": "loki-datasource" },
+          "expr": "topk(10, sum by (session_id) (sum_over_time({service_name=\"claude-code\"} | json | drop __error__, __error_details__ | event_name=`api_request` | unwrap cost_usd [$__range])))",
+          "instant": true,
+          "legendFormat": "{{session_id}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Top 10 Sessions by Cost",
+      "description": "コストが高い上位10セッション。コスト超過しているセッションの特定に使う。",
+      "type": "table",
+      "transformations": [
+        {
+          "id": "filterFieldsByName",
+          "options": { "include": { "names": ["session_id", "Value #A"] } }
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "loki", "uid": "loki-datasource" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "custom": { "align": "auto", "cellOptions": { "type": "auto" }, "filterable": true },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 5 },
+              { "color": "red", "value": 10 }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "Value #A" },
+            "properties": [{ "id": "displayName", "value": "API Request Count (Turns)" }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "prompt_id" },
+            "properties": [{ "id": "displayName", "value": "Prompt ID" }]
+          }
+        ]
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "id": 4,
+      "options": {
+        "cellHeight": "sm",
+        "footer": { "show": false },
+        "showHeader": true,
+        "sortBy": [{ "desc": true, "displayName": "API Request Count (Turns)" }]
+      },
+      "targets": [
+        {
+          "datasource": { "type": "loki", "uid": "loki-datasource" },
+          "expr": "topk(10, sum by (prompt_id) (count_over_time({service_name=\"claude-code\"} | json | drop __error__, __error_details__ | event_name=`api_request` [$__range])))",
+          "instant": true,
+          "legendFormat": "{{prompt_id}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Top 10 Prompts by Turn Count",
+      "description": "APIリクエスト数（ターン数）が多い上位10プロンプト。10回超はループや非効率なプロンプトの可能性。prompt_idをPrompt Timelineに貼り付けて詳細を確認できる。",
+      "type": "table",
+      "transformations": [
+        {
+          "id": "filterFieldsByName",
+          "options": { "include": { "names": ["prompt_id", "Value #A"] } }
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "loki", "uid": "loki-datasource" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 2, "fillOpacity": 15, "showPoints": "never" }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "Cache Read Tokens" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "green", "mode": "fixed" } }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "Cache Creation Tokens" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "orange", "mode": "fixed" } }]
+          }
+        ]
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+      "id": 5,
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "none" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "loki", "uid": "loki-datasource" },
+          "expr": "sum(sum_over_time({service_name=\"claude-code\"} | json | drop __error__, __error_details__ | event_name=`api_request` | unwrap cache_read_tokens [$__interval]))",
+          "legendFormat": "Cache Read Tokens",
+          "refId": "A"
+        },
+        {
+          "datasource": { "type": "loki", "uid": "loki-datasource" },
+          "expr": "sum(sum_over_time({service_name=\"claude-code\"} | json | drop __error__, __error_details__ | event_name=`api_request` | unwrap cache_creation_tokens [$__interval]))",
+          "legendFormat": "Cache Creation Tokens",
+          "refId": "B"
+        }
+      ],
+      "title": "Cache Performance (Read vs Creation Tokens)",
+      "description": "緑（Cache Read）が多いほどキャッシュが効いている。セッション開始直後はCacheCreationが増え、継続するとCacheReadに移行するのが理想的な形。",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "loki", "uid": "loki-datasource" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 2, "fillOpacity": 20, "showPoints": "never" }
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
+      "id": 6,
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "single", "sort": "none" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "loki", "uid": "loki-datasource" },
+          "expr": "sum(count_over_time({service_name=\"claude-code\"} | json | drop __error__, __error_details__ | event_name=`user_prompt` [$__interval]))",
+          "legendFormat": "Prompts",
+          "refId": "A"
+        }
+      ],
+      "title": "Prompt Activity Over Time",
+      "description": "時系列でのプロンプト数。使用頻度のパターンを把握する。",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 38,
+  "tags": ["claude-code", "efficiency"],
+  "templating": { "list": [] },
+  "time": { "from": "now-3h", "to": "now" },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Claude Code - Developer Efficiency",
+  "uid": "claude-code-dev-efficiency",
+  "version": 1
+}

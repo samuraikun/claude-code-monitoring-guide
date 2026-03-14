@@ -154,6 +154,51 @@ npm install -g @anthropic-ai/claude-code
 
 3. Check for firewall issues blocking port 4317
 
+### Delta Temporality問題 — Prometheusの値が不正確
+
+**Problem**: Prometheusにデータは表示されるが、値が累積されず不正確（各ポイントが差分値になっている）。
+
+**原因**: Claude CodeのデフォルトはDelta temporalityだが、PrometheusはCumulative temporalityを期待する。
+
+**解決**:
+```bash
+export OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE=cumulative
+```
+
+これを設定しないと、各メトリクスポイントが前回との差分として記録されるため、`sum()`や`increase()`クエリが正しく機能しない。
+
+### Eventsが収集されない（Lokiにデータが表示されない）
+
+**Problem**: Claude Codeのイベントログ（tool_result、api_error等）がLokiに表示されない。
+
+**解決手順**:
+
+1. `OTEL_LOGS_EXPORTER` が設定されているか確認:
+   ```bash
+   echo $OTEL_LOGS_EXPORTER  # "otlp" であること
+   ```
+
+2. OTELコレクターのlogsパイプラインが有効か確認:
+   ```bash
+   docker logs otel-collector 2>&1 | grep -i "logs pipeline"
+   ```
+
+3. Lokiが起動しているか確認:
+   ```bash
+   curl http://localhost:3100/ready
+   # "ready" が返ること
+   ```
+
+4. Lokiにデータが届いているか確認:
+   ```bash
+   curl http://localhost:3100/loki/api/v1/labels
+   ```
+
+5. GrafanaのExploreでLokiデータソースを選択し、以下のクエリでテスト:
+   ```
+   {service_name="claude-code"}
+   ```
+
 ### Incorrect Cost Calculations
 
 **Problem**: Cost metrics don't match expected values.

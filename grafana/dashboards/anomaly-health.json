@@ -1,0 +1,303 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": { "type": "grafana", "uid": "-- Grafana --" },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "datasource": { "type": "loki", "uid": "loki-datasource" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 2, "fillOpacity": 10, "showPoints": "never" }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "Failed Tools" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "All Tools" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "#555", "mode": "fixed" } }]
+          }
+        ]
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "id": 1,
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "none" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "loki", "uid": "loki-datasource" },
+          "expr": "sum(rate({service_name=\"claude-code\"} | json | drop __error__, __error_details__ | event_name=`tool_result` | success=`false` [$__interval]))",
+          "legendFormat": "Failed Tools",
+          "refId": "A"
+        },
+        {
+          "datasource": { "type": "loki", "uid": "loki-datasource" },
+          "expr": "sum(rate({service_name=\"claude-code\"} | json | drop __error__, __error_details__ | event_name=`tool_result` [$__interval]))",
+          "legendFormat": "All Tools",
+          "refId": "B"
+        }
+      ],
+      "title": "Tool Failure Rate",
+      "description": "赤（失敗）が多い時間帯はClaudeが間違った操作を繰り返している可能性。連続失敗は手動介入のサイン。",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "loki", "uid": "loki-datasource" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 2, "fillOpacity": 10, "showPoints": "never" },
+          "unit": "ms",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 10000 },
+              { "color": "red", "value": 30000 }
+            ]
+          }
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "id": 2,
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "single", "sort": "none" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "loki", "uid": "loki-datasource" },
+          "expr": "quantile_over_time(0.95, {service_name=\"claude-code\"} | json | drop __error__, __error_details__ | event_name=`api_request` | unwrap duration_ms [$__interval]) by ()",
+          "legendFormat": "p95 Duration",
+          "refId": "A"
+        },
+        {
+          "datasource": { "type": "loki", "uid": "loki-datasource" },
+          "expr": "quantile_over_time(0.50, {service_name=\"claude-code\"} | json | drop __error__, __error_details__ | event_name=`api_request` | unwrap duration_ms [$__interval]) by ()",
+          "legendFormat": "p50 Duration",
+          "refId": "B"
+        }
+      ],
+      "title": "API Request Duration (p50 / p95)",
+      "description": "p95が30秒超はAPI遅延またはスタック。自分の使い方の問題ではなくAnthropicAPI側の問題の切り分けに使う。",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "loki", "uid": "loki-datasource" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "custom": { "align": "auto", "cellOptions": { "type": "auto" }, "filterable": true },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 5 },
+              { "color": "red", "value": 10 }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "Value #A" },
+            "properties": [{ "id": "displayName", "value": "Turn Count" }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "prompt_id" },
+            "properties": [{ "id": "displayName", "value": "Prompt ID (paste to Prompt Timeline for details)" }]
+          }
+        ]
+      },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 8 },
+      "id": 3,
+      "options": {
+        "cellHeight": "sm",
+        "footer": { "show": false },
+        "showHeader": true,
+        "sortBy": [{ "desc": true, "displayName": "Turn Count" }]
+      },
+      "targets": [
+        {
+          "datasource": { "type": "loki", "uid": "loki-datasource" },
+          "expr": "topk(20, sum by (prompt_id) (count_over_time({service_name=\"claude-code\"} | json | drop __error__, __error_details__ | event_name=`api_request` [$__range])))",
+          "instant": true,
+          "legendFormat": "{{prompt_id}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Loop Detection — High Turn Count Prompts (Top 20)",
+      "description": "ターン数が多いプロンプト上位20件。10回超は要確認。prompt_idを「Prompt Timeline」ダッシュボードに貼り付けると全イベントを詳細確認できる。",
+      "type": "table",
+      "transformations": [
+        {
+          "id": "filterFieldsByName",
+          "options": { "include": { "names": ["prompt_id", "Value #A"] } }
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "loki", "uid": "loki-datasource" },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 16 },
+      "id": 4,
+      "options": {
+        "dedupStrategy": "none",
+        "enableLogDetails": true,
+        "prettifyLogMessage": false,
+        "showCommonLabels": false,
+        "showLabels": false,
+        "showTime": true,
+        "sortOrder": "Descending",
+        "wrapLogMessage": true
+      },
+      "targets": [
+        {
+          "datasource": { "type": "loki", "uid": "loki-datasource" },
+          "expr": "{service_name=\"claude-code\"} | json | drop __error__, __error_details__ | event_name=`tool_result` | tool_result_size_bytes > 100000 | line_format \"{{.tool_name}} | size={{.tool_result_size_bytes}} bytes | success={{.success}} | session={{.session_id}}\"",
+          "legendFormat": "",
+          "refId": "A"
+        }
+      ],
+      "title": "Large Tool Results (> 100KB)",
+      "description": "100KB超のtool_result。データベースダンプ全文やディレクトリ一覧など意図しない大量データ読み出しの検知に使う。",
+      "type": "logs"
+    },
+    {
+      "datasource": { "type": "loki", "uid": "loki-datasource" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "custom": { "align": "auto", "cellOptions": { "type": "auto" }, "filterable": true },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "red", "value": 1 }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "tool_name" },
+            "properties": [{ "id": "displayName", "value": "Tool" }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "Value #A" },
+            "properties": [{ "id": "displayName", "value": "Failure Count" }]
+          }
+        ]
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 24 },
+      "id": 5,
+      "options": {
+        "cellHeight": "sm",
+        "footer": { "show": false },
+        "showHeader": true,
+        "sortBy": [{ "desc": true, "displayName": "Failure Count" }]
+      },
+      "targets": [
+        {
+          "datasource": { "type": "loki", "uid": "loki-datasource" },
+          "expr": "sum by (tool_name) (count_over_time({service_name=\"claude-code\"} | json | drop __error__, __error_details__ | event_name=`tool_result` | success=`false` [$__range]))",
+          "instant": true,
+          "legendFormat": "{{tool_name}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Tool Failure Count by Tool Name",
+      "description": "ツール別の失敗回数。特定ツールの失敗が多い場合はClaudeの使い方の問題か、環境の問題かを切り分けるヒントになる。",
+      "type": "table",
+      "transformations": [
+        {
+          "id": "filterFieldsByName",
+          "options": { "include": { "names": ["tool_name", "Value #A"] } }
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "loki", "uid": "loki-datasource" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "custom": { "align": "auto", "cellOptions": { "type": "auto" }, "filterable": true },
+          "unit": "bytes",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 500000 },
+              { "color": "red", "value": 1000000 }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "tool_name" },
+            "properties": [{ "id": "displayName", "value": "Tool" }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "Value #A" },
+            "properties": [
+              { "id": "displayName", "value": "Max Result Size" },
+              { "id": "unit", "value": "bytes" }
+            ]
+          }
+        ]
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 24 },
+      "id": 6,
+      "options": {
+        "cellHeight": "sm",
+        "footer": { "show": false },
+        "showHeader": true,
+        "sortBy": [{ "desc": true, "displayName": "Max Result Size" }]
+      },
+      "targets": [
+        {
+          "datasource": { "type": "loki", "uid": "loki-datasource" },
+          "expr": "max by (tool_name) (max_over_time({service_name=\"claude-code\"} | json | drop __error__, __error_details__ | event_name=`tool_result` | unwrap tool_result_size_bytes [$__range]))",
+          "instant": true,
+          "legendFormat": "{{tool_name}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Max Tool Result Size by Tool",
+      "description": "ツール別の最大出力サイズ。異常に大きい出力を持つツールを特定する。",
+      "type": "table",
+      "transformations": [
+        {
+          "id": "filterFieldsByName",
+          "options": { "include": { "names": ["tool_name", "Value #A"] } }
+        }
+      ]
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 38,
+  "tags": ["claude-code", "anomaly", "health"],
+  "templating": { "list": [] },
+  "time": { "from": "now-3h", "to": "now" },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Claude Code - Anomaly & Health",
+  "uid": "claude-code-anomaly-health",
+  "version": 1
+}

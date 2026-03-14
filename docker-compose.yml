@@ -11,6 +11,8 @@ services:
       - "8889:8889"   # Prometheus metrics
     depends_on:
       - prometheus
+      - loki
+      - tempo
 
   # Prometheus
   prometheus:
@@ -29,6 +31,28 @@ services:
       - '--storage.tsdb.retention.time=200h'
       - '--web.enable-lifecycle'
 
+  # Loki (ログ/イベント保存)
+  loki:
+    image: grafana/loki:latest
+    container_name: loki
+    ports:
+      - "3100:3100"
+    command: -config.file=/etc/loki/local-config.yaml
+    volumes:
+      - loki_data:/loki
+
+  # Tempo (トレース保存)
+  tempo:
+    image: grafana/tempo:2.6.1
+    container_name: tempo
+    command: ["-config.file=/etc/tempo.yaml"]
+    volumes:
+      - ./tempo.yaml:/etc/tempo.yaml
+      - tempo_data:/var/tempo
+    ports:
+      - "3200:3200"   # Tempo HTTP API
+      - "4317"        # OTLP gRPC (内部用)
+
   # Grafana
   grafana:
     image: grafana/grafana:latest
@@ -43,7 +67,11 @@ services:
       - ./grafana/dashboards:/var/lib/grafana/dashboards
     depends_on:
       - prometheus
+      - loki
+      - tempo
 
 volumes:
   prometheus_data:
   grafana_data:
+  loki_data:
+  tempo_data:
