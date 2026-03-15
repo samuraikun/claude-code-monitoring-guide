@@ -51,6 +51,18 @@ claude -p "hello world"
 }
 ```
 
+**標準属性一覧**:
+
+| 属性 | 説明 |
+|------|------|
+| `user.id` | 匿名デバイス識別子（ハッシュ化されたデバイスID） |
+| `user.account_uuid` | Anthropicアカウント UUID（ログイン時のみ） |
+| `organization.id` | 組織 UUID（Enterprise/Team使用時） |
+| `session.id` | CLIセッション識別子 |
+| `terminal.type` | ターミナル種別（例: `vscode`, `terminal`） |
+| `app.version` | Claude Code CLIバージョン |
+| `model` | 使用モデル名 |
+
 ### Prometheus Setup
 
 For actual ROI measurement, you need Prometheus. Console output is just debugging - Prometheus gives you dashboards, historical data, and executive-ready visualizations.
@@ -69,10 +81,25 @@ Configure Claude Code to send metrics to Prometheus:
 # Enable telemetry
 export CLAUDE_CODE_ENABLE_TELEMETRY=1
 
-# Configure OTLP exporter  
+# Configure OTLP exporter
 export OTEL_METRICS_EXPORTER=otlp
 export OTEL_EXPORTER_OTLP_PROTOCOL=grpc
 export OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317
+
+# Events exporter（ツール実行・APIリクエストのログ収集）
+export OTEL_LOGS_EXPORTER=otlp
+
+# Temporality設定（Prometheus使用時は必須: cumulative に設定しないと値が不正確になる）
+export OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE=cumulative
+
+# カーディナリティ制御
+export OTEL_METRICS_INCLUDE_SESSION_ID=true      # デフォルト: true
+export OTEL_METRICS_INCLUDE_VERSION=false         # デフォルト: false
+export OTEL_METRICS_INCLUDE_ACCOUNT_UUID=true     # デフォルト: true
+
+# プライバシー制御（デフォルト無効 - 有効化前にプライバシーポリシーを確認すること）
+# export OTEL_LOG_USER_PROMPTS=1        # プロンプト内容のログ
+# export OTEL_LOG_TOOL_DETAILS=1        # MCPツール名のログ
 
 # Optional: Set authentication if required
 # export OTEL_EXPORTER_OTLP_HEADERS="Authorization=Bearer your-token"
@@ -214,6 +241,28 @@ Claude Code provides these additional telemetry metrics:
 | `claude_code.code_edit_tool.decision` | Code editing tool permission decisions | Monitor how often developers accept/reject suggested changes |
 | `claude_code.cost.usage` | Cost per session in USD | Budget tracking and cost analysis |
 | `claude_code.token.usage` | Token consumption by type (input/output/cache) | Understand usage patterns and optimize costs |
+| `claude_code.active_time.total` | ユーザーの実利用時間（秒）| `type` 属性で `"user"`（対話時間）/ `"cli"`（CLI操作時間）に分類。サブスクリプション価値の正確な測定に活用 |
+
+### Events (OTELログ)
+
+Claude Codeはメトリクスに加えて、詳細な操作ログをOTELログ（Events）としてエクスポートします。`OTEL_LOGS_EXPORTER=otlp` を設定すると収集可能です。
+
+| イベント | 説明 | 主な活用方法 |
+|---------|------|-------------|
+| `claude_code.user_prompt` | プロンプト送信イベント | タスク分類、プロンプト品質分析（`OTEL_LOG_USER_PROMPTS=1` で内容を含む） |
+| `claude_code.tool_result` | ツール実行結果 | 成功率・実行時間分析、ツール使用パターンの把握 |
+| `claude_code.api_request` | APIリクエスト詳細 | コスト・レイテンシー分析、モデル別利用状況 |
+| `claude_code.api_error` | APIエラー | エラー分類・頻度の監視、障害対応の改善 |
+| `claude_code.tool_decision` | ツール許可判断 | 開発者がClaudeの提案を受け入れた/拒否した判断の追跡 |
+
+**イベント相関**: 各イベントは `prompt.id` 属性を持ち、1つのプロンプト処理に関連するすべてのイベント（APIリクエスト→ツール実行→結果）を紐付けてトレースできます。
+
+```bash
+# LokiでClaudeイベントを検索する例（Grafana Explore）
+{service_name="claude-code"}                    # 全イベント
+{service_name="claude-code"} |= "tool_result"  # ツール実行結果のみ
+{service_name="claude-code"} |= "api_error"    # APIエラーのみ
+```
 
 ### Combining Metrics for Insights
 
@@ -509,16 +558,13 @@ Create a `managed-settings.json` file:
 
 ```json
 {
-  "telemetry": {
-    "enabled": true,
-    "endpoint": "https://your-otel-collector.company.com:4317",
-    "headers": {
-      "Authorization": "Bearer ${OTEL_TOKEN}"
-    }
-  },
-  "exporters": {
-    "metrics": "otlp",
-    "logs": "otlp"
+  "env": {
+    "CLAUDE_CODE_ENABLE_TELEMETRY": "1",
+    "OTEL_METRICS_EXPORTER": "otlp",
+    "OTEL_LOGS_EXPORTER": "otlp",
+    "OTEL_EXPORTER_OTLP_PROTOCOL": "grpc",
+    "OTEL_EXPORTER_OTLP_ENDPOINT": "http://collector.example.com:4317",
+    "OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE": "cumulative"
   }
 }
 ```

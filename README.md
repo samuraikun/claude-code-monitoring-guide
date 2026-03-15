@@ -1,8 +1,10 @@
 # Claude Code Monitoring Guide
 
-Claude Code のテレメトリデータを収集・可視化し、コスト・効率・異常を監視するためのガイドです。
+A guide for collecting and visualizing telemetry data from Claude Code to monitor costs, efficiency, and anomalies.
 
-## アーキテクチャ
+[日本語](README_JA.md)
+
+## Architecture
 
 ```
 Claude Code
@@ -13,19 +15,19 @@ OpenTelemetry Collector
   ├─ logs    ──▶ Loki (:3100)
   └─ traces  ──▶ Tempo (:3200)
                     ▲
-                Grafana (:3000) ─ 全データソースを横断可視化
+                Grafana (:3000) ─ unified visualization across all data sources
 ```
 
-Claude Code は `prompt.id`（UUID v4）をすべてのイベントに付与して送信します。この ID をキーに `user_prompt → api_request → tool_result` の処理フロー全体をトレースできます。
+Claude Code attaches a `prompt.id` (UUID v4) to every event. This ID is the key to tracing the entire processing flow from `user_prompt → api_request → tool_result`.
 
-## 前提条件
+## Prerequisites
 
 - Docker / Docker Compose
-- Claude Code がインストール済み
+- Claude Code installed
 
-## セットアップ
+## Setup
 
-### 1. 監視スタックの起動
+### 1. Start the Monitoring Stack
 
 ```bash
 git clone https://github.com/samuraikun/claude-code-monitoring-guide
@@ -33,19 +35,19 @@ cd claude-code-monitoring-guide
 docker compose up -d
 ```
 
-起動するサービス:
+Services started:
 
-| サービス | ポート | 役割 |
+| Service | Port | Role |
 |---|---|---|
-| OpenTelemetry Collector | 4317 (gRPC), 4318 (HTTP) | テレメトリ受信・転送 |
-| Prometheus | 9090 | メトリクス保存 |
-| Loki | 3100 | ログ/イベント保存 |
-| Tempo | 3200 | トレース保存 |
-| Grafana | 3000 | 可視化 (admin/admin) |
+| OpenTelemetry Collector | 4317 (gRPC), 4318 (HTTP) | Receives and forwards telemetry |
+| Prometheus | 9090 | Metrics storage |
+| Loki | 3100 | Log/event storage |
+| Tempo | 3200 | Trace storage |
+| Grafana | 3000 | Visualization (admin/admin) |
 
-### 2. Claude Code のテレメトリ設定
+### 2. Configure Claude Code Telemetry
 
-このリポジトリで `claude` を起動すると `.claude/settings.json` により自動でテレメトリが有効になります。
+When you launch `claude` in this repository, telemetry is automatically enabled via `.claude/settings.json`.
 
 ```json
 {
@@ -60,24 +62,24 @@ docker compose up -d
 }
 ```
 
-他のリポジトリで使う場合は `~/.claude/settings.json`（グローバル設定）に同じ内容を追記します。
+To use this in other repositories, add the same configuration to `~/.claude/settings.json` (global settings).
 
-### 3. 動作確認
+### 3. Verify
 
 ```bash
-# Claude Code を起動して何か作業する
+# Start Claude Code and do some work
 claude
 
-# Loki にデータが届いているか確認
+# Check if data is arriving at Loki
 curl -s http://localhost:3100/loki/api/v1/labels | jq .
 
-# Grafana でログを確認: http://localhost:3000
+# View logs in Grafana: http://localhost:3000
 # Explore → Loki → {service_name="claude-code"}
 ```
 
-## Grafana ダッシュボード
+## Grafana Dashboards
 
-Grafana 起動後、`http://localhost:3000` にアクセスすると **Claude Code** フォルダに以下のダッシュボードが自動プロビジョニングされています。
+After starting Grafana, navigate to `http://localhost:3000` and the following dashboards will be automatically provisioned in the **Claude Code** folder.
 
 ---
 
@@ -85,21 +87,21 @@ Grafana 起動後、`http://localhost:3000` にアクセスすると **Claude Co
 
 **UID**: `claude-code-prompt-timeline`
 
-1つのプロンプト処理の全イベントを時系列で確認する、トレース相当のビューです。
+A trace-equivalent view showing all events for a single prompt in chronological order.
 
-**使い方**:
-1. "Recent Prompts" パネルで調査したい `prompt_id` をコピー
-2. 画面上部の "Prompt ID" 入力欄に貼り付け
-3. `user_prompt → api_request → tool_result` の流れを確認
+**How to use**:
+1. Copy a `prompt_id` from the "Recent Prompts" panel
+2. Paste it into the "Prompt ID" input at the top
+3. Review the `user_prompt → api_request → tool_result` flow
 
-**パネル構成**:
+**Panels**:
 
-| パネル | タイプ | 内容 |
+| Panel | Type | Description |
 |---|---|---|
-| Recent Prompts | Logs | 直近のプロンプト一覧。prompt_id をここからコピー |
-| Prompt Event Timeline | Logs | 選択した prompt_id の全イベントを時系列表示 |
-| API Requests for Prompt | Table | モデル・コスト・トークン数・レイテンシ |
-| Tool Executions for Prompt | Table | ツール名・成否・実行時間・結果サイズ |
+| Recent Prompts | Logs | List of recent prompts. Copy prompt_id from here |
+| Prompt Event Timeline | Logs | All events for the selected prompt_id in chronological order |
+| API Requests for Prompt | Table | Model, cost, token count, latency |
+| Tool Executions for Prompt | Table | Tool name, success/failure, duration, result size |
 
 ---
 
@@ -107,18 +109,18 @@ Grafana 起動後、`http://localhost:3000` にアクセスすると **Claude Co
 
 **UID**: `claude-code-dev-efficiency`
 
-ツール使用パターン・コスト・キャッシュ効率を把握するダッシュボードです。
+Dashboard for understanding tool usage patterns, costs, and cache efficiency.
 
-**パネル構成**:
+**Panels**:
 
-| パネル | タイプ | 内容 |
+| Panel | Type | Description |
 |---|---|---|
-| Tool Usage Distribution | Bar chart | ツール別の総実行回数。Bash 比率が高い場合はプロンプトの曖昧さを疑う |
-| Bash vs Total Tool Executions | Time series | Bash と全ツール実行の比率推移 |
-| Top 10 Sessions by Cost | Table | コスト上位セッション（USD） |
-| Top 10 Prompts by Turn Count | Table | ターン数上位プロンプト。10回超はループや非効率の可能性 |
-| Cache Performance | Time series | Cache Read（緑）と Cache Creation（橙）の比率。緑が多いほど効率的 |
-| Prompt Activity Over Time | Time series | 時系列でのプロンプト数（使用頻度のパターン把握） |
+| Tool Usage Distribution | Bar chart | Total executions per tool. High Bash ratio may indicate vague prompts |
+| Bash vs Total Tool Executions | Time series | Ratio of Bash to total tool executions over time |
+| Top 10 Sessions by Cost | Table | Highest-cost sessions (USD) |
+| Top 10 Prompts by Turn Count | Table | Highest turn-count prompts. Over 10 may indicate loops or inefficiency |
+| Cache Performance | Time series | Cache Read (green) vs Cache Creation (orange). More green = more efficient |
+| Prompt Activity Over Time | Time series | Number of prompts over time (usage frequency patterns) |
 
 ---
 
@@ -126,86 +128,86 @@ Grafana 起動後、`http://localhost:3000` にアクセスすると **Claude Co
 
 **UID**: `claude-code-anomaly-health`
 
-異常検知と健全性監視のダッシュボードです。
+Dashboard for anomaly detection and health monitoring.
 
-**パネル構成**:
+**Panels**:
 
-| パネル | タイプ | 内容 |
+| Panel | Type | Description |
 |---|---|---|
-| Tool Failure Rate | Time series | ツール失敗数の推移。連続失敗は手動介入のサイン |
-| API Request Duration (p50/p95) | Time series | p95 が 30 秒超は API 遅延またはスタックの疑い |
-| Loop Detection — High Turn Count | Table | ターン数上位 20 プロンプト。10 回超は要確認 |
-| Large Tool Results (> 100KB) | Logs | 意図しない大量データ読み出しの検知 |
-| Tool Failure Count by Tool Name | Table | ツール別の失敗回数 |
-| Max Tool Result Size by Tool | Table | ツール別の最大出力サイズ |
+| Tool Failure Rate | Time series | Tool failure count over time. Consecutive failures are a sign of needed intervention |
+| API Request Duration (p50/p95) | Time series | p95 over 30s may indicate API delays or stuck processes |
+| Loop Detection — High Turn Count | Table | Top 20 prompts by turn count. Over 10 requires review |
+| Large Tool Results (> 100KB) | Logs | Detects unintended large data reads |
+| Tool Failure Count by Tool Name | Table | Failure count per tool |
+| Max Tool Result Size by Tool | Table | Maximum output size per tool |
 
 ---
 
-### Working Dashboard（元のダッシュボード）
+### Working Dashboard
 
-コスト・トークン・セッション数などの基本メトリクスを表示する汎用ダッシュボードです。
+General-purpose dashboard showing basic metrics such as cost, tokens, and session count.
 
-## ファイル構成
+## File Structure
 
 ```
 .
-├── docker-compose.yml              # 監視スタック定義
-├── otel-collector-config.yaml      # OTEL Collector 設定
-├── prometheus.yml                  # Prometheus スクレイプ設定
-├── tempo.yaml                      # Tempo 設定
+├── docker-compose.yml              # Monitoring stack definition
+├── otel-collector-config.yaml      # OTEL Collector configuration
+├── prometheus.yml                  # Prometheus scrape configuration
+├── tempo.yaml                      # Tempo configuration
 ├── .claude/
-│   └── settings.json               # Claude Code テレメトリ設定（自動有効化）
+│   └── settings.json               # Claude Code telemetry settings (auto-enabled)
 ├── grafana/
 │   ├── dashboards/
-│   │   ├── prompt-timeline.json    # Prompt Timeline ダッシュボード
-│   │   ├── developer-efficiency.json # Developer Efficiency ダッシュボード
-│   │   ├── anomaly-health.json     # Anomaly & Health ダッシュボード
-│   │   └── working-dashboard.json  # 基本メトリクスダッシュボード
+│   │   ├── prompt-timeline.json    # Prompt Timeline dashboard
+│   │   ├── developer-efficiency.json # Developer Efficiency dashboard
+│   │   ├── anomaly-health.json     # Anomaly & Health dashboard
+│   │   └── working-dashboard.json  # Basic metrics dashboard
 │   └── provisioning/
 │       ├── dashboards/
-│       │   └── dashboards.yaml     # ダッシュボード自動プロビジョニング設定
+│       │   └── dashboards.yaml     # Dashboard auto-provisioning config
 │       └── datasources/
-│           └── datasources.yaml    # データソース設定（Prometheus/Loki/Tempo）
-├── claude_code_roi_full.md         # ROI 計測の詳細ガイド
-├── troubleshooting.md              # トラブルシューティング
-└── report-generation-prompt.md    # 自動レポート生成プロンプトテンプレート
+│           └── datasources.yaml    # Data source config (Prometheus/Loki/Tempo)
+├── claude_code_roi_full.md         # Detailed ROI measurement guide
+├── troubleshooting.md              # Troubleshooting
+└── report-generation-prompt.md    # Automated report generation prompt template
 ```
 
-## 主要メトリクスとログイベント
+## Key Metrics and Log Events
 
-Claude Code は以下のイベントを OTLP で送信します：
+Claude Code sends the following events via OTLP:
 
-| イベント | 用途 |
+| Event | Description |
 |---|---|
-| `user_prompt` | プロンプト送信。`prompt_id` / `session_id` / `prompt_length` を含む |
-| `api_request` | API リクエスト。`model` / `cost_usd` / `duration_ms` / `input_tokens` / `output_tokens` / `cache_read_tokens` / `cache_creation_tokens` を含む |
-| `tool_result` | ツール実行結果。`tool_name` / `success` / `duration_ms` / `tool_result_size_bytes` を含む |
+| `user_prompt` | Prompt submission. Includes `prompt_id` / `session_id` / `prompt_length` |
+| `api_request` | API request. Includes `model` / `cost_usd` / `duration_ms` / `input_tokens` / `output_tokens` / `cache_read_tokens` / `cache_creation_tokens` |
+| `tool_result` | Tool execution result. Includes `tool_name` / `success` / `duration_ms` / `tool_result_size_bytes` |
 
-Loki での基本クエリ:
+Basic Loki queries:
 
 ```logql
-# 全イベントを確認
+# View all events
 {service_name="claude-code"} | json | drop __error__, __error_details__
 
-# 特定 prompt_id のイベントをトレース
+# Trace events for a specific prompt_id
 {service_name="claude-code"} | json | drop __error__, __error_details__ | prompt_id=`<your-prompt-id>`
 
-# ツール失敗のみ抽出
+# Filter only tool failures
 {service_name="claude-code"} | json | drop __error__, __error_details__ | event_name=`tool_result` | success=`false`
 ```
 
-## トラブルシューティング
+## Troubleshooting
 
-詳細は [troubleshooting.md](troubleshooting.md) を参照してください。
+See [troubleshooting.md](troubleshooting.md) for details.
 
-**よくある問題**:
+**Common issues**:
 
-- **Loki にデータが届かない**: `OTEL_LOGS_EXPORTER=otlp` が設定されているか確認
-- **Prometheus の値が不正確**: `OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE=cumulative` が必要
-- **テレメトリが有効にならない**: `docker compose ps` でコンテナが起動しているか確認し、`curl http://localhost:4317` でポートが開いているか確認
+- **No data arriving at Loki**: Check that `OTEL_LOGS_EXPORTER=otlp` is set
+- **Inaccurate Prometheus values**: `OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE=cumulative` is required
+- **Telemetry not enabled**: Run `docker compose ps` to verify containers are running and `curl http://localhost:4317` to check the port is open
 
 ## Contributing
 
-実装経験に基づいた改善や追加ユースケースがあれば、Issue / PR をお送りください。
+If you have improvements or additional use cases based on your implementation experience, please open an Issue or PR.
 
 Original guide by [Kashyap Coimbatore Murali](https://www.linkedin.com/in/kashyap-murali/)
