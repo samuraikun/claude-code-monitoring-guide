@@ -1,11 +1,47 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(*)",
+      "Read",
+      "Edit",
+      "MultiEdit",
+      "Write",
+      "Glob",
+      "Grep",
+      "LS",
+      "Task",
+      "WebFetch",
+      "WebSearch",
+      "Skill(*)",
+      "mcp__datadog__*",
+      "mcp__serena__*",
+      "mcp__sentry__*",
+      "mcp__chrome-devtools__*",
+      "mcp__spec-workflow__*",
+      "mcp__plugin_playwright_playwright__*"
+    ],
+    "deny": [
+      "Read(.env*)",
+      "Bash(rm -rf:*)",
+      "Bash(sudo:*)",
+      "Bash(shutdown:*)",
+      "Bash(reboot:*)"
+    ],
+    "ask": []
+  },
+  "outputStyle": "default",
   "env": {
+    "ENABLE_TOOL_SEARCH": true,
     "CLAUDE_CODE_ENABLE_TELEMETRY": "1",
     "OTEL_METRICS_EXPORTER": "otlp",
     "OTEL_LOGS_EXPORTER": "otlp",
     "OTEL_EXPORTER_OTLP_PROTOCOL": "grpc",
     "OTEL_EXPORTER_OTLP_ENDPOINT": "http://localhost:4317",
     "OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE": "cumulative"
+  },
+  "enabledPlugins": {
+    "commit-commands@claude-plugins-official": true,
+    "code-simplifier@claude-plugins-official": true
   }
 }
