@@ -165,7 +165,7 @@
           "id": "extractFields",
           "options": {
             "format": "auto",
-            "keepTime": true,
+            "keepTime": false,
             "replace": false,
             "source": "labels"
           }
@@ -249,7 +249,7 @@
           "id": "extractFields",
           "options": {
             "format": "auto",
-            "keepTime": true,
+            "keepTime": false,
             "replace": false,
             "source": "labels"
           }

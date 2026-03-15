@@ -271,6 +271,97 @@
       "title": "Prompt Activity Over Time",
       "description": "時系列でのプロンプト数。使用頻度のパターンを把握する。",
       "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 2, "fillOpacity": 10, "showPoints": "never" }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 24 },
+      "id": 7,
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "none" }
+      },
+      "targets": [{
+        "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+        "editorMode": "code",
+        "expr": "sum by (model)(increase(claude_code_token_usage_tokens_total[$__interval]))",
+        "legendFormat": "{{model}}",
+        "range": true, "refId": "A"
+      }],
+      "title": "Token Usage by Model",
+      "description": "モデル別のトークン使用量の時系列。モデルの切り替えや利用パターンを把握できる。",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "fillOpacity": 80, "lineWidth": 1, "hideFrom": { "legend": false, "tooltip": false, "viz": false } }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 24 },
+      "id": 8,
+      "options": {
+        "barWidth": 0.6, "groupWidth": 0.7,
+        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true },
+        "orientation": "auto", "showValue": "auto",
+        "tooltip": { "mode": "single", "sort": "none" },
+        "xTickLabelRotation": -45, "xTickLabelSpacing": 100
+      },
+      "targets": [{
+        "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+        "editorMode": "code",
+        "expr": "sort_desc(sum by (language)(increase(claude_code_code_edit_tool_decision_total{decision=\"accept\"}[$__range])))",
+        "instant": true, "legendFormat": "{{language}}", "refId": "A"
+      }],
+      "title": "Code Edit Approvals by Language",
+      "description": "言語別のコード編集ツール承認数。Claudeがどの言語のファイルを最も編集しているかを把握できる。",
+      "type": "barchart"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "fillOpacity": 80, "lineWidth": 1, "hideFrom": { "legend": false, "tooltip": false, "viz": false } }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "config" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "green", "mode": "fixed" } }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "user_reject" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } }]
+          }
+        ]
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 32 },
+      "id": 9,
+      "options": {
+        "barWidth": 0.6, "groupWidth": 0.7,
+        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true },
+        "orientation": "auto", "showValue": "auto",
+        "tooltip": { "mode": "single", "sort": "none" },
+        "xTickLabelRotation": -45, "xTickLabelSpacing": 100
+      },
+      "targets": [{
+        "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+        "editorMode": "code",
+        "expr": "sum by (source)(increase(claude_code_code_edit_tool_decision_total[$__range]))",
+        "instant": true, "legendFormat": "{{source}}", "refId": "A"
+      }],
+      "title": "Code Edit Decisions by Source",
+      "description": "コード編集の許可判断ソース別内訳。config（設定済み自動承認）vs user_permanent/user_temporary（手動承認）vs user_reject（手動拒否）の割合。拒否が多い場合はClaudeへの指示の見直しを検討。",
+      "type": "barchart"
     }
   ],
   "refresh": "30s",
