@@ -413,6 +413,173 @@
       "title": "Tool Decision Rate (Accept vs Reject)",
       "description": "ツール実行の承認・拒否レート。赤（拒否）が増加する時間帯は、ユーザーがClaudeの操作を手動でブロックしている。設定（config）またはユーザー操作（user_reject）が原因。",
       "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "loki", "uid": "loki-datasource" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 2, "fillOpacity": 10, "showPoints": "never" },
+          "unit": "ms",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 30000 },
+              { "color": "red", "value": 60000 }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "p99 Duration" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "p95 Duration" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "orange", "mode": "fixed" } }]
+          }
+        ]
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 48 },
+      "id": 10,
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "none" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "loki", "uid": "loki-datasource" },
+          "expr": "quantile_over_time(0.99, {service_name=\"claude-code\"} | json | drop __error__, __error_details__ | event_name=`api_request` | unwrap duration_ms [$__interval]) by ()",
+          "legendFormat": "p99 Duration",
+          "refId": "A"
+        },
+        {
+          "datasource": { "type": "loki", "uid": "loki-datasource" },
+          "expr": "quantile_over_time(0.95, {service_name=\"claude-code\"} | json | drop __error__, __error_details__ | event_name=`api_request` | unwrap duration_ms [$__interval]) by ()",
+          "legendFormat": "p95 Duration",
+          "refId": "B"
+        }
+      ],
+      "title": "API Request Duration (p99 / p95)",
+      "description": "P99レイテンシ。P95と比較してP99が著しく高い場合、特定のリクエストパターンがボトルネックになっている可能性。60秒超は要注意。",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "loki", "uid": "loki-datasource" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 2, "fillOpacity": 20, "showPoints": "never" }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "429 (Rate Limit)" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "orange", "mode": "fixed" } }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "500 (Server Error)" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "529 (Overloaded)" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "dark-red", "mode": "fixed" } }]
+          }
+        ]
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 48 },
+      "id": 11,
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "none" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "loki", "uid": "loki-datasource" },
+          "expr": "sum(count_over_time({service_name=\"claude-code\"} | json | drop __error__, __error_details__ | event_name=`api_error` | status_code=`429` [$__interval]))",
+          "legendFormat": "429 (Rate Limit)",
+          "refId": "A"
+        },
+        {
+          "datasource": { "type": "loki", "uid": "loki-datasource" },
+          "expr": "sum(count_over_time({service_name=\"claude-code\"} | json | drop __error__, __error_details__ | event_name=`api_error` | status_code=`500` [$__interval]))",
+          "legendFormat": "500 (Server Error)",
+          "refId": "B"
+        },
+        {
+          "datasource": { "type": "loki", "uid": "loki-datasource" },
+          "expr": "sum(count_over_time({service_name=\"claude-code\"} | json | drop __error__, __error_details__ | event_name=`api_error` | status_code=`529` [$__interval]))",
+          "legendFormat": "529 (Overloaded)",
+          "refId": "C"
+        }
+      ],
+      "title": "Rate Limit & Server Error Frequency",
+      "description": "429（レート制限）・500（サーバーエラー）・529（過負荷）の時系列推移。スパイクが多い時間帯はAnthropicのキャパシティ問題の可能性。",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "loki", "uid": "loki-datasource" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 2 },
+              { "color": "red", "value": 3 }
+            ]
+          },
+          "unit": "short",
+          "decimals": 1
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 56 },
+      "id": 12,
+      "options": {
+        "colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "pluginVersion": "9.0.0",
+      "targets": [{
+        "datasource": { "type": "loki", "uid": "loki-datasource" },
+        "editorMode": "code",
+        "expr": "avg(avg_over_time({service_name=\"claude-code\"} | json | drop __error__, __error_details__ | event_name=`api_error` | unwrap attempt [$__range]))",
+        "instant": true, "legendFormat": "", "refId": "A"
+      }],
+      "title": "Average Retry Attempts",
+      "description": "APIエラー時の平均リトライ回数。2回以上はAPI接続の不安定さを示す。3回以上が継続する場合はキャパシティプランニングを検討。",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "loki", "uid": "loki-datasource" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "fillOpacity": 80, "lineWidth": 1, "hideFrom": { "legend": false, "tooltip": false, "viz": false } }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 56 },
+      "id": 13,
+      "options": {
+        "barWidth": 0.6, "groupWidth": 0.7,
+        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true },
+        "orientation": "auto", "showValue": "auto",
+        "tooltip": { "mode": "single", "sort": "none" },
+        "xTickLabelRotation": -45, "xTickLabelSpacing": 100
+      },
+      "targets": [{
+        "datasource": { "type": "loki", "uid": "loki-datasource" },
+        "expr": "sum by (source) (count_over_time({service_name=\"claude-code\"} | json | drop __error__, __error_details__ | event_name=`tool_decision` | decision=`reject` [$__range]))",
+        "instant": true, "legendFormat": "{{source}}", "refId": "A"
+      }],
+      "title": "Tool Rejections by Source",
+      "description": "ツール拒否のソース別内訳。config（設定）・user_reject（手動拒否）・user_permanent（恒久拒否）など、どの仕組みで拒否されているかを把握する。",
+      "type": "barchart"
     }
   ],
   "refresh": "30s",

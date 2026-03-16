@@ -55,9 +55,12 @@ Access Grafana at `http://localhost:3000` (admin/admin). Dashboards are auto-pro
 | Dashboard | UID | Purpose |
 |---|---|---|
 | Prompt Timeline | `claude-code-prompt-timeline` | Trace all events for a single `prompt_id` |
-| Developer Efficiency | `claude-code-dev-efficiency` | Tool usage, costs, cache hit rates |
-| Anomaly & Health | `claude-code-anomaly-health` | Failure rates, loop detection, large results |
-| Working Dashboard | — | Basic cost/token/session metrics |
+| Session Timeline | `claude-code-session-timeline` | Drill down into a specific session |
+| Developer Efficiency | `claude-code-dev-efficiency` | Tool usage, costs, cache hit rates, Fast Mode, model cost efficiency |
+| Anomaly & Health | `claude-code-anomaly-health` | Failure rates, loop detection, P99 latency, rate limits |
+| Working Dashboard | `claude-code-working` | Basic cost/token/session metrics, DAU, cache hit rate |
+| ROI & Productivity | `claude-code-roi-productivity` | Cost per commit/PR/LOC, cache efficiency, user productivity |
+| Adoption & Usage Patterns | `claude-code-adoption-usage` | DAU/WAU/MAU, Fast Mode adoption, terminal/IDE distribution |
 
 ## Verifying Data Collection
 
