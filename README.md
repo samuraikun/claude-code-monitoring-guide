@@ -105,11 +105,35 @@ A trace-equivalent view showing all events for a single prompt in chronological 
 
 ---
 
+### Session Timeline
+
+**UID**: `claude-code-session-timeline`
+
+Drill-down view for a specific session, showing all events, prompts, and tool usage within the session.
+
+**How to use**:
+1. Copy a `session_id` from the "Recent Sessions" panel
+2. Paste it into the "Session ID" input at the top
+3. Review all prompts, costs, and tool usage within the session
+
+**Panels**:
+
+| Panel | Type | Description |
+|---|---|---|
+| Recent Sessions | Table | List of recent sessions with prompt counts and costs |
+| Session Event Stream | Logs | All events for the selected session_id in chronological order |
+| Prompts in Session — Turn Count | Table | Per-prompt turn counts within the session |
+| Prompts in Session — Cost | Table | Per-prompt costs within the session |
+| Tool Usage in Session | Bar chart | Tool usage distribution within the session |
+| Cache Performance in Session | Time series | Cache read vs creation tokens within the session |
+
+---
+
 ### Developer Efficiency
 
 **UID**: `claude-code-dev-efficiency`
 
-Dashboard for understanding tool usage patterns, costs, and cache efficiency.
+Dashboard for understanding tool usage patterns, costs, cache efficiency, and model performance.
 
 **Panels**:
 
@@ -121,6 +145,12 @@ Dashboard for understanding tool usage patterns, costs, and cache efficiency.
 | Top 10 Prompts by Turn Count | Table | Highest turn-count prompts. Over 10 may indicate loops or inefficiency |
 | Cache Performance | Time series | Cache Read (green) vs Cache Creation (orange). More green = more efficient |
 | Prompt Activity Over Time | Time series | Number of prompts over time (usage frequency patterns) |
+| Token Usage by Model | Time series | Token consumption by model over time |
+| Code Edit Approvals by Language | Bar chart | Code edit approvals by programming language |
+| Code Edit Decisions by Source | Bar chart | Breakdown of edit decisions: config (auto-approve) vs user actions |
+| Fast Mode Usage Rate | Stat | Percentage of API requests using Fast Mode |
+| Model Cost Efficiency (Output Tokens / $) | Time series | Output tokens per dollar by model — higher is more efficient |
+| Tool Success Rate Trend by Tool | Time series | Success rate over time per tool for reliability tracking |
 
 ---
 
@@ -140,12 +170,85 @@ Dashboard for anomaly detection and health monitoring.
 | Large Tool Results (> 100KB) | Logs | Detects unintended large data reads |
 | Tool Failure Count by Tool Name | Table | Failure count per tool |
 | Max Tool Result Size by Tool | Table | Maximum output size per tool |
+| API Errors by Status Code | Bar chart | API error counts by HTTP status code (429, 500, etc.) |
+| High Retry Prompts (Top 10) | Table | Prompts with the most retry attempts |
+| Tool Decision Rate (Accept vs Reject) | Time series | Tool execution approval/rejection rate over time |
+| API Request Duration (p99/p95) | Time series | P99 latency — large gap with p95 indicates specific request bottlenecks |
+| Rate Limit & Server Error Frequency | Time series | 429 (rate limit), 500 (server error), 529 (overloaded) trends over time |
+| Average Retry Attempts | Stat | Average retry count on API errors. 3+ indicates capacity issues |
+| Tool Rejections by Source | Bar chart | Breakdown of tool rejections by source (config, user_reject, etc.) |
 
 ---
 
 ### Working Dashboard
 
-General-purpose dashboard showing basic metrics such as cost, tokens, and session count.
+**UID**: `claude-code-working`
+
+General-purpose dashboard showing basic metrics such as cost, tokens, session count, and key KPIs.
+
+**Panels**:
+
+| Panel | Type | Description |
+|---|---|---|
+| Total Cost / Active Users / Total Tokens / Lines of Code | Stat | Top-level KPI cards |
+| Cost by Model | Pie chart | Cost breakdown by model |
+| Token Usage by Type | Pie chart | Token breakdown (input, output, cacheRead, cacheCreation) |
+| Cost by User / Lines of Code by Type | Table | Per-user costs, LOC by type (added/removed) |
+| Active Time (Total) / Active Time by Type | Stat + Pie | Total and breakdown of active time |
+| Cost by Organization | Table | Per-organization costs |
+| Tool Results / API Errors | Logs | Raw log panels for tool results and API errors |
+| Sessions / Commits / Pull Requests | Stat | Session and output count KPIs |
+| Cost per Commit | Stat | AI cost per git commit — core ROI metric |
+| DAU (Daily Active Users) | Stat | Unique users with sessions in the last 24h |
+| Cache Hit Rate | Stat | cache_read_tokens / (input_tokens + cache_read_tokens) |
+
+---
+
+### ROI & Productivity
+
+**UID**: `claude-code-roi-productivity`
+
+Dashboard for measuring return on investment and developer productivity.
+
+**Panels**:
+
+| Panel | Type | Description |
+|---|---|---|
+| Cost per Commit | Stat | AI cost per commit — core ROI metric |
+| Cost per PR | Stat | AI cost per pull request |
+| Cost per LOC (Added) | Stat | AI cost per line of code added |
+| LOC per Session | Stat | Lines of code per session — productivity indicator |
+| Commits per Session | Stat | Commits per session — output indicator |
+| User Wait Time Ratio | Stat | CLI processing time / total active time — measures AI wait time |
+| Cache Hit Rate | Stat | Cache read tokens as a percentage of total input |
+| Estimated Cache Savings | Stat | Estimated cost savings from cache hits |
+| Cache Hit Rate Trend | Time series | Cache hit rate over time |
+| Cache Hit Rate by Model | Bar chart | Cache efficiency comparison across models |
+| Cost Efficiency Trend | Time series | Cost/Commit and Cost/PR trends over time |
+| Lines of Code Trend by Type | Time series | LOC added/removed over time |
+| User Productivity Summary | Table | Per-user cost, commits, and LOC comparison |
+
+---
+
+### Adoption & Usage Patterns
+
+**UID**: `claude-code-adoption-usage`
+
+Dashboard for tracking organizational adoption and usage patterns.
+
+**Panels**:
+
+| Panel | Type | Description |
+|---|---|---|
+| DAU / WAU / MAU | Stat | Daily, weekly, and monthly active users |
+| Fast Mode Usage Rate | Stat | Percentage of API requests using Fast Mode |
+| Model Usage Over Time | Time series | API request count by model over time |
+| Sessions Over Time | Time series | Session count trends |
+| Terminal / IDE Distribution | Pie chart | Session distribution by terminal type (VSCode, JetBrains, terminal, etc.) |
+| Organization Cost Trend | Time series | Cost trends by organization |
+| Fast Mode vs Normal Mode Over Time | Time series | Fast Mode adoption tracking |
+| Prompt Activity Over Time | Time series | Prompt count trends for peak usage analysis |
+| User Adoption Summary | Table | Per-user sessions, cost, and active time |
 
 ## File Structure
 
@@ -160,9 +263,12 @@ General-purpose dashboard showing basic metrics such as cost, tokens, and sessio
 ├── grafana/
 │   ├── dashboards/
 │   │   ├── prompt-timeline.json    # Prompt Timeline dashboard
+│   │   ├── session-timeline.json   # Session Timeline dashboard
 │   │   ├── developer-efficiency.json # Developer Efficiency dashboard
 │   │   ├── anomaly-health.json     # Anomaly & Health dashboard
-│   │   └── working-dashboard.json  # Basic metrics dashboard
+│   │   ├── working-dashboard.json  # Basic metrics dashboard
+│   │   ├── roi-productivity.json   # ROI & Productivity dashboard
+│   │   └── adoption-usage.json     # Adoption & Usage Patterns dashboard
 │   └── provisioning/
 │       ├── dashboards/
 │       │   └── dashboards.yaml     # Dashboard auto-provisioning config
@@ -180,8 +286,10 @@ Claude Code sends the following events via OTLP:
 | Event | Description |
 |---|---|
 | `user_prompt` | Prompt submission. Includes `prompt_id` / `session_id` / `prompt_length` |
-| `api_request` | API request. Includes `model` / `cost_usd` / `duration_ms` / `input_tokens` / `output_tokens` / `cache_read_tokens` / `cache_creation_tokens` |
+| `api_request` | API request. Includes `model` / `cost_usd` / `duration_ms` / `input_tokens` / `output_tokens` / `cache_read_tokens` / `cache_creation_tokens` / `speed` |
 | `tool_result` | Tool execution result. Includes `tool_name` / `success` / `duration_ms` / `tool_result_size_bytes` |
+| `api_error` | API error. Includes `status_code` / `attempt` / `prompt_id` |
+| `tool_decision` | Tool execution approval/rejection. Includes `decision` (accept/reject) / `source` (config/user_reject/etc.) |
 
 Basic Loki queries:
 

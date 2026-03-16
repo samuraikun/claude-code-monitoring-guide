@@ -105,11 +105,35 @@ Grafana 起動後、`http://localhost:3000` にアクセスすると **Claude Co
 
 ---
 
+### Session Timeline
+
+**UID**: `claude-code-session-timeline`
+
+特定セッションの全イベントを時系列で確認するドリルダウンビューです。
+
+**使い方**:
+1. "Recent Sessions" パネルで調査したい `session_id` をコピー
+2. 画面上部の "Session ID" 入力欄に貼り付け
+3. セッション内の全プロンプト・コスト・ツール利用状況を確認
+
+**パネル構成**:
+
+| パネル | タイプ | 内容 |
+|---|---|---|
+| Recent Sessions | Table | 直近のセッション一覧（プロンプト数・コスト付き） |
+| Session Event Stream | Logs | 選択した session_id の全イベントを時系列表示 |
+| Prompts in Session — Turn Count | Table | セッション内の各プロンプトのターン数 |
+| Prompts in Session — Cost | Table | セッション内の各プロンプトのコスト |
+| Tool Usage in Session | Bar chart | セッション内のツール利用分布 |
+| Cache Performance in Session | Time series | セッション内のキャッシュ読み取り vs 作成トークン |
+
+---
+
 ### Developer Efficiency
 
 **UID**: `claude-code-dev-efficiency`
 
-ツール使用パターン・コスト・キャッシュ効率を把握するダッシュボードです。
+ツール使用パターン・コスト・キャッシュ効率・モデル性能を把握するダッシュボードです。
 
 **パネル構成**:
 
@@ -121,6 +145,12 @@ Grafana 起動後、`http://localhost:3000` にアクセスすると **Claude Co
 | Top 10 Prompts by Turn Count | Table | ターン数上位プロンプト。10回超はループや非効率の可能性 |
 | Cache Performance | Time series | Cache Read（緑）と Cache Creation（橙）の比率。緑が多いほど効率的 |
 | Prompt Activity Over Time | Time series | 時系列でのプロンプト数（使用頻度のパターン把握） |
+| Token Usage by Model | Time series | モデル別のトークン使用量の時系列 |
+| Code Edit Approvals by Language | Bar chart | 言語別のコード編集承認数 |
+| Code Edit Decisions by Source | Bar chart | 編集判断ソース別内訳（config / user_permanent / user_reject） |
+| Fast Mode Usage Rate | Stat | Fast Mode を使用した API リクエストの割合 |
+| Model Cost Efficiency (Output Tokens / $) | Time series | モデル別の 1 ドルあたり出力トークン数。高いほど効率的 |
+| Tool Success Rate Trend by Tool | Time series | ツール別の成功率の時系列推移 |
 
 ---
 
@@ -140,12 +170,85 @@ Grafana 起動後、`http://localhost:3000` にアクセスすると **Claude Co
 | Large Tool Results (> 100KB) | Logs | 意図しない大量データ読み出しの検知 |
 | Tool Failure Count by Tool Name | Table | ツール別の失敗回数 |
 | Max Tool Result Size by Tool | Table | ツール別の最大出力サイズ |
+| API Errors by Status Code | Bar chart | HTTP ステータスコード別の API エラー数（429、500 等） |
+| High Retry Prompts (Top 10) | Table | リトライが多発したプロンプト上位 10 件 |
+| Tool Decision Rate (Accept vs Reject) | Time series | ツール実行の承認・拒否レートの時系列 |
+| API Request Duration (p99/p95) | Time series | P99 レイテンシ。P95 との差が大きい場合は特定リクエストのボトルネック |
+| Rate Limit & Server Error Frequency | Time series | 429（レート制限）・500（サーバーエラー）・529（過負荷）の推移 |
+| Average Retry Attempts | Stat | API エラー時の平均リトライ回数。3 回以上はキャパシティ問題の可能性 |
+| Tool Rejections by Source | Bar chart | ツール拒否のソース別内訳（config / user_reject 等） |
 
 ---
 
-### Working Dashboard（元のダッシュボード）
+### Working Dashboard
 
-コスト・トークン・セッション数などの基本メトリクスを表示する汎用ダッシュボードです。
+**UID**: `claude-code-working`
+
+コスト・トークン・セッション数などの基本メトリクスと主要 KPI を表示する汎用ダッシュボードです。
+
+**パネル構成**:
+
+| パネル | タイプ | 内容 |
+|---|---|---|
+| Total Cost / Active Users / Total Tokens / Lines of Code | Stat | トップレベル KPI カード |
+| Cost by Model | Pie chart | モデル別コスト内訳 |
+| Token Usage by Type | Pie chart | トークン種別内訳（input, output, cacheRead, cacheCreation） |
+| Cost by User / Lines of Code by Type | Table | ユーザー別コスト、タイプ別 LOC（追加/削除） |
+| Active Time (Total) / Active Time by Type | Stat + Pie | 合計・種別ごとのアクティブ時間 |
+| Cost by Organization | Table | 組織別コスト |
+| Tool Results / API Errors | Logs | ツール結果と API エラーの生ログ |
+| Sessions / Commits / Pull Requests | Stat | セッション数・成果物カウント |
+| Cost per Commit | Stat | コミット 1 件あたりの AI コスト — ROI 測定の基本指標 |
+| DAU (Daily Active Users) | Stat | 直近 24 時間のユニークユーザー数 |
+| Cache Hit Rate | Stat | cache_read_tokens / (input_tokens + cache_read_tokens) |
+
+---
+
+### ROI & Productivity
+
+**UID**: `claude-code-roi-productivity`
+
+ROI（投資対効果）と開発者の生産性を測定するダッシュボードです。
+
+**パネル構成**:
+
+| パネル | タイプ | 内容 |
+|---|---|---|
+| Cost per Commit | Stat | コミット 1 件あたりの AI コスト — ROI の核心指標 |
+| Cost per PR | Stat | PR 1 件あたりの AI コスト |
+| Cost per LOC (Added) | Stat | 追加コード 1 行あたりの AI コスト |
+| LOC per Session | Stat | セッションあたりのコード行数 — 生産性指標 |
+| Commits per Session | Stat | セッションあたりのコミット数 — 成果指標 |
+| User Wait Time Ratio | Stat | CLI 処理時間 / 全アクティブ時間 — AI 待機時間の割合 |
+| Cache Hit Rate | Stat | キャッシュ読み取りトークンの割合 |
+| Estimated Cache Savings | Stat | キャッシュヒットによる推定コスト節約額 |
+| Cache Hit Rate Trend | Time series | キャッシュヒット率の時系列推移 |
+| Cache Hit Rate by Model | Bar chart | モデル別のキャッシュ効率比較 |
+| Cost Efficiency Trend | Time series | Cost/Commit と Cost/PR の推移 |
+| Lines of Code Trend by Type | Time series | LOC（追加・削除）の時系列推移 |
+| User Productivity Summary | Table | ユーザー別コスト・コミット数・LOC の比較一覧 |
+
+---
+
+### Adoption & Usage Patterns
+
+**UID**: `claude-code-adoption-usage`
+
+組織全体の採用状況と利用パターンを追跡するダッシュボードです。
+
+**パネル構成**:
+
+| パネル | タイプ | 内容 |
+|---|---|---|
+| DAU / WAU / MAU | Stat | 日次・週次・月次のアクティブユーザー数 |
+| Fast Mode Usage Rate | Stat | Fast Mode を使用した API リクエストの割合 |
+| Model Usage Over Time | Time series | モデル別 API リクエスト数の時系列推移 |
+| Sessions Over Time | Time series | セッション数の推移 |
+| Terminal / IDE Distribution | Pie chart | ターミナル・IDE 別のセッション分布（VSCode、JetBrains 等） |
+| Organization Cost Trend | Time series | 組織別のコスト推移 |
+| Fast Mode vs Normal Mode Over Time | Time series | Fast Mode の採用状況トラッキング |
+| Prompt Activity Over Time | Time series | プロンプト数の推移（ピーク利用時間帯の把握） |
+| User Adoption Summary | Table | ユーザー別セッション数・コスト・アクティブ時間の一覧 |
 
 ## ファイル構成
 
@@ -160,9 +263,12 @@ Grafana 起動後、`http://localhost:3000` にアクセスすると **Claude Co
 ├── grafana/
 │   ├── dashboards/
 │   │   ├── prompt-timeline.json    # Prompt Timeline ダッシュボード
+│   │   ├── session-timeline.json   # Session Timeline ダッシュボード
 │   │   ├── developer-efficiency.json # Developer Efficiency ダッシュボード
 │   │   ├── anomaly-health.json     # Anomaly & Health ダッシュボード
-│   │   └── working-dashboard.json  # 基本メトリクスダッシュボード
+│   │   ├── working-dashboard.json  # 基本メトリクスダッシュボード
+│   │   ├── roi-productivity.json   # ROI & Productivity ダッシュボード
+│   │   └── adoption-usage.json     # Adoption & Usage Patterns ダッシュボード
 │   └── provisioning/
 │       ├── dashboards/
 │       │   └── dashboards.yaml     # ダッシュボード自動プロビジョニング設定
@@ -180,8 +286,10 @@ Claude Code は以下のイベントを OTLP で送信します：
 | イベント | 用途 |
 |---|---|
 | `user_prompt` | プロンプト送信。`prompt_id` / `session_id` / `prompt_length` を含む |
-| `api_request` | API リクエスト。`model` / `cost_usd` / `duration_ms` / `input_tokens` / `output_tokens` / `cache_read_tokens` / `cache_creation_tokens` を含む |
+| `api_request` | API リクエスト。`model` / `cost_usd` / `duration_ms` / `input_tokens` / `output_tokens` / `cache_read_tokens` / `cache_creation_tokens` / `speed` を含む |
 | `tool_result` | ツール実行結果。`tool_name` / `success` / `duration_ms` / `tool_result_size_bytes` を含む |
+| `api_error` | API エラー。`status_code` / `attempt` / `prompt_id` を含む |
+| `tool_decision` | ツール実行の承認・拒否。`decision`（accept/reject）/ `source`（config/user_reject 等）を含む |
 
 Loki での基本クエリ:
 
