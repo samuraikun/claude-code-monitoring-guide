@@ -50,7 +50,7 @@
             "type": "loki",
             "uid": "loki-datasource"
           },
-          "expr": "{service_name=\"claude-code\"} | json | drop __error__, __error_details__ | event_name=`user_prompt` | line_format \"session={{.session_id}} | prompt_id={{.prompt_id}} | len={{.prompt_length}}\"",
+          "expr": "{service_name=\"claude-code\"} | json | drop __error__, __error_details__ | event_name=`user_prompt` | line_format \"prompt_id={{.prompt_id}} | {{.prompt}}\"",
           "legendFormat": "",
           "refId": "A"
         }

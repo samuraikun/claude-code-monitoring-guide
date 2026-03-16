@@ -82,7 +82,33 @@
     },
     {
       "datasource": { "type": "loki", "uid": "loki-datasource" },
-      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 8 },
+      "gridPos": { "h": 6, "w": 24, "x": 0, "y": 8 },
+      "id": 7,
+      "options": {
+        "dedupStrategy": "none",
+        "enableLogDetails": true,
+        "prettifyLogMessage": false,
+        "showCommonLabels": false,
+        "showLabels": false,
+        "showTime": true,
+        "sortOrder": "Descending",
+        "wrapLogMessage": true
+      },
+      "targets": [
+        {
+          "datasource": { "type": "loki", "uid": "loki-datasource" },
+          "expr": "{service_name=\"claude-code\"} | json | drop __error__, __error_details__ | session_id=`$session_id` | event_name=`user_prompt` | line_format \"prompt_id={{.prompt_id}} | {{.prompt}}\"",
+          "legendFormat": "",
+          "refId": "A"
+        }
+      ],
+      "title": "Prompts in Session",
+      "description": "セッション内の全プロンプト内容一覧。",
+      "type": "logs"
+    },
+    {
+      "datasource": { "type": "loki", "uid": "loki-datasource" },
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 14 },
       "id": 2,
       "options": {
         "dedupStrategy": "none",
@@ -97,7 +123,7 @@
       "targets": [
         {
           "datasource": { "type": "loki", "uid": "loki-datasource" },
-          "expr": "{service_name=\"claude-code\"} | json | drop __error__, __error_details__ | session_id=`$session_id` | line_format \"{{.event_name}} | prompt={{.prompt_id}} | tool={{.tool_name}} | duration={{.duration_ms}}ms | success={{.success}}\"",
+          "expr": "{service_name=\"claude-code\"} | json | drop __error__, __error_details__ | session_id=`$session_id` | line_format \"{{.event_name}} | prompt_id={{.prompt_id}} | {{if .prompt}}\\\"{{.prompt}}\\\"{{end}}{{if .tool_name}}tool={{.tool_name}} | duration={{.duration_ms}}ms | success={{.success}}{{end}}{{if .cost_usd}}model={{.model}} | cost={{.cost_usd}}{{end}}\"",
           "legendFormat": "",
           "refId": "A"
         }
@@ -136,7 +162,7 @@
           }
         ]
       },
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 18 },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 24 },
       "id": 3,
       "options": {
         "cellHeight": "sm",
@@ -204,7 +230,7 @@
           }
         ]
       },
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 18 },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 24 },
       "id": 4,
       "options": {
         "cellHeight": "sm",
@@ -251,7 +277,7 @@
         },
         "overrides": []
       },
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 26 },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 32 },
       "id": 5,
       "options": {
         "barWidth": 0.6,
@@ -298,7 +324,7 @@
           }
         ]
       },
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 26 },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 32 },
       "id": 6,
       "options": {
         "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true },

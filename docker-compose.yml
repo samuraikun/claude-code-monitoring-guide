@@ -22,7 +22,7 @@ services:
       - "9090:9090"
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml
-      - prometheus_data:/prometheus
+      - ./data/prometheus:/prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
@@ -39,7 +39,8 @@ services:
       - "3100:3100"
     command: -config.file=/etc/loki/local-config.yaml
     volumes:
-      - loki_data:/loki
+      - ./loki-config.yaml:/etc/loki/local-config.yaml
+      - ./data/loki:/loki
 
   # Tempo (トレース保存)
   tempo:
@@ -71,7 +72,5 @@ services:
       - tempo
 
 volumes:
-  prometheus_data:
   grafana_data:
-  loki_data:
   tempo_data:
