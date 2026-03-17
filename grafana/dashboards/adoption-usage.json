@@ -835,6 +835,100 @@
           }
         }
       ]
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "loki-datasource"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 80,
+            "showPoints": "never",
+            "stacking": {
+              "mode": "normal"
+            }
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Normal"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "blue",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Fast"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 40
+      },
+      "id": 12,
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "loki-datasource"
+          },
+          "expr": "sum(count_over_time({service_name=\"claude-code\"} | json | drop __error__, __error_details__ | event_name=`api_request` | speed=`normal` [$__interval]))",
+          "legendFormat": "Normal",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "loki-datasource"
+          },
+          "expr": "sum(count_over_time({service_name=\"claude-code\"} | json | drop __error__, __error_details__ | event_name=`api_request` | speed=`fast` [$__interval]))",
+          "legendFormat": "Fast",
+          "refId": "B"
+        }
+      ],
+      "title": "Fast Mode Adoption Over Time",
+      "description": "Fast Mode と Normal Mode の API リクエスト数推移（スタック表示）。Fast Mode の採用状況をトラッキングする。",
+      "type": "timeseries"
     }
   ],
   "refresh": "30s",

@@ -53,6 +53,7 @@ When you launch `claude` in this repository, telemetry is automatically enabled 
 {
   "env": {
     "CLAUDE_CODE_ENABLE_TELEMETRY": "1",
+    "CLAUDE_CODE_ENHANCED_TELEMETRY_BETA": "1",
     "OTEL_METRICS_EXPORTER": "otlp",
     "OTEL_LOGS_EXPORTER": "otlp",
     "OTEL_EXPORTER_OTLP_PROTOCOL": "grpc",
@@ -250,6 +251,39 @@ Dashboard for tracking organizational adoption and usage patterns.
 | Prompt Activity Over Time | Time series | Prompt count trends for peak usage analysis |
 | User Adoption Summary | Table | Per-user sessions, cost, and active time |
 
+---
+
+### Trace Explorer
+
+**UID**: `claude-code-trace-explorer`
+
+Dashboard for exploring Enhanced Telemetry Beta trace spans including TTFT, tool execution breakdown, and permission wait times. Requires `CLAUDE_CODE_ENHANCED_TELEMETRY_BETA=1`.
+
+**Panels**:
+
+| Panel | Type | Description |
+|---|---|---|
+| TTFT (Time to First Token) - P50/P95/P99 | Time series | Time to first token distribution for LLM requests |
+| TTFT by Model | Bar chart | Average TTFT comparison across models |
+| Tool Permission Wait Time (P50/P95) | Time series | Time spent waiting for user permission decisions |
+| Permission Decision Distribution | Bar chart | Distribution of accept/reject/timeout decisions |
+| Interaction Duration Breakdown | Time series (stacked) | LLM request vs tool execution vs permission wait |
+| Tool Result Token Consumption | Bar chart | Token consumption by tool — identifies costly tools |
+| Tool Execution Details | Table | Recent tool execution spans with duration/success/error |
+| Recent Interaction Traces | Table | Recent interaction traces — click traceID for waterfall view |
+
+## Trace Spans (Enhanced Telemetry Beta)
+
+Requires `CLAUDE_CODE_ENHANCED_TELEMETRY_BETA=1`. These spans are sent to Tempo via OTLP.
+
+| Span Name | Key Attributes |
+|---|---|
+| `claude_code.interaction` | Root span for a full user interaction (prompt to response) |
+| `claude_code.llm_request` | LLM API call. `ttft_ms`, `model`, `input_tokens`, `output_tokens` |
+| `claude_code.tool` | Tool invocation. `tool_name`, `result_tokens` |
+| `claude_code.tool.execution` | Tool execution phase. `tool_name`, `success`, `error` |
+| `claude_code.tool.blocked_on_user` | Permission wait. `decision` (accept/reject/timeout) |
+
 ## File Structure
 
 ```
@@ -268,7 +302,8 @@ Dashboard for tracking organizational adoption and usage patterns.
 │   │   ├── anomaly-health.json     # Anomaly & Health dashboard
 │   │   ├── working-dashboard.json  # Basic metrics dashboard
 │   │   ├── roi-productivity.json   # ROI & Productivity dashboard
-│   │   └── adoption-usage.json     # Adoption & Usage Patterns dashboard
+│   │   ├── adoption-usage.json     # Adoption & Usage Patterns dashboard
+│   │   └── trace-explorer.json    # Trace Explorer dashboard (Enhanced Telemetry Beta)
 │   └── provisioning/
 │       ├── dashboards/
 │       │   └── dashboards.yaml     # Dashboard auto-provisioning config
@@ -290,6 +325,9 @@ Claude Code sends the following events via OTLP:
 | `tool_result` | Tool execution result. Includes `tool_name` / `success` / `duration_ms` / `tool_result_size_bytes` |
 | `api_error` | API error. Includes `status_code` / `attempt` / `prompt_id` |
 | `tool_decision` | Tool execution approval/rejection. Includes `decision` (accept/reject) / `source` (config/user_reject/etc.) |
+| `system_prompt` | System prompt tracking. Includes `system_prompt_hash` / `system_prompt_length` |
+| `hook_execution_complete` | Hook execution result. Includes `hook_name` / `num_success` / `num_blocking` |
+| `feedback_survey` | Feedback survey (including compact conversation detection). Includes `survey_type` (`post_compact`) |
 
 Basic Loki queries:
 

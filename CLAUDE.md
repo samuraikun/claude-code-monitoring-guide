@@ -43,6 +43,7 @@ OpenTelemetry Collector  (otel-collector-config.yaml)
 Telemetry is auto-enabled when running `claude` in this repo via `.claude/settings.json`. The critical env vars are:
 
 - `CLAUDE_CODE_ENABLE_TELEMETRY=1` — enables telemetry export
+- `CLAUDE_CODE_ENHANCED_TELEMETRY_BETA=1` — enables Enhanced Telemetry Beta (trace spans: TTFT, tool execution breakdown, permission wait time)
 - `OTEL_LOGS_EXPORTER=otlp` — required for Loki event collection (tool_result, api_error, etc.)
 - `OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE=cumulative` — required for correct Prometheus values; without this, delta values break `sum()` and `increase()` queries
 
@@ -61,6 +62,7 @@ Access Grafana at `http://localhost:3000` (admin/admin). Dashboards are auto-pro
 | Working Dashboard | `claude-code-working` | Basic cost/token/session metrics, DAU, cache hit rate |
 | ROI & Productivity | `claude-code-roi-productivity` | Cost per commit/PR/LOC, cache efficiency, user productivity |
 | Adoption & Usage Patterns | `claude-code-adoption-usage` | DAU/WAU/MAU, Fast Mode adoption, terminal/IDE distribution |
+| Trace Explorer | `claude-code-trace-explorer` | TTFT, tool execution breakdown, permission wait time (Enhanced Telemetry Beta) |
 
 ## Verifying Data Collection
 
@@ -98,3 +100,37 @@ OTEL_METRICS_EXPORTER=console OTEL_METRIC_EXPORT_INTERVAL=1000 claude -p "test"
 | `user_prompt` | `prompt_id`, `session_id`, `prompt_length` |
 | `api_request` | `model`, `cost_usd`, `duration_ms`, `input_tokens`, `output_tokens`, `cache_read_tokens`, `cache_creation_tokens` |
 | `tool_result` | `tool_name`, `success`, `duration_ms`, `tool_result_size_bytes` |
+| `system_prompt` | `system_prompt_hash`, `system_prompt_length`, `session_id` |
+| `hook_execution_complete` | `hook_name`, `num_success`, `num_blocking`, `session_id` |
+| `feedback_survey` | `survey_type` (`post_compact`), `prompt_id`, `session_id` |
+
+## Trace Spans (Enhanced Telemetry Beta)
+
+Requires `CLAUDE_CODE_ENHANCED_TELEMETRY_BETA=1`. These spans are sent to Tempo via OTLP.
+
+| Span Name | Key Attributes |
+|---|---|
+| `claude_code.interaction` | Root span for a full user interaction (prompt → response) |
+| `claude_code.llm_request` | LLM API call. `ttft_ms`, `model`, `input_tokens`, `output_tokens` |
+| `claude_code.tool` | Tool invocation. `tool_name`, `result_tokens` |
+| `claude_code.tool.execution` | Tool execution phase. `tool_name`, `success`, `error` |
+| `claude_code.tool.blocked_on_user` | Permission wait. `decision` (accept/reject/timeout) |
+
+## Key TraceQL Queries
+
+```traceql
+# All interaction traces
+{resource.service.name="claude-code" && name="claude_code.interaction"}
+
+# LLM requests with TTFT
+{resource.service.name="claude-code" && name="claude_code.llm_request"}
+
+# Tool executions
+{resource.service.name="claude-code" && name="claude_code.tool.execution"}
+
+# Permission wait times
+{resource.service.name="claude-code" && name="claude_code.tool.blocked_on_user"}
+
+# Slow LLM requests (> 10s)
+{resource.service.name="claude-code" && name="claude_code.llm_request" && duration > 10s}
+```

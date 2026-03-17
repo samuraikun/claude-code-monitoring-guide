@@ -41,7 +41,8 @@
     "OTEL_EXPORTER_OTLP_ENDPOINT": "http://localhost:4317",
     "OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE": "cumulative",
     "OTEL_METRICS_INCLUDE_VERSION": "true",
-    "OTEL_LOG_USER_PROMPTS": "1"
+    "OTEL_LOG_USER_PROMPTS": "1",
+    "CLAUDE_CODE_ENHANCED_TELEMETRY_BETA": "1"
   },
   "enabledPlugins": {
     "commit-commands@claude-plugins-official": true,

@@ -931,6 +931,241 @@
       "title": "Tool Success Rate Trend by Tool",
       "description": "ツール別の成功率の時系列推移。特定ツールの成功率低下を検知し、信頼性改善に活用する。",
       "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "loki", "uid": "loki-datasource" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "custom": { "align": "auto", "cellOptions": { "type": "auto" }, "filterable": true },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 56 },
+      "id": 13,
+      "options": {
+        "cellHeight": "sm",
+        "footer": { "show": false },
+        "showHeader": true
+      },
+      "targets": [
+        {
+          "datasource": { "type": "loki", "uid": "loki-datasource" },
+          "expr": "{service_name=\"claude-code\"} | json | drop __error__, __error_details__ | event_name=`system_prompt` | label_format hash=system_prompt_hash, length=system_prompt_length, session=session_id",
+          "legendFormat": "",
+          "refId": "A"
+        }
+      ],
+      "title": "System Prompt Changes",
+      "description": "system_promptイベントのログ。ハッシュ値とサイズからシステムプロンプトの変更を追跡する。CLAUDE.mdの変更やconfigの更新がここに反映される。",
+      "type": "table",
+      "transformations": [
+        {
+          "id": "extractFields",
+          "options": {
+            "format": "auto",
+            "keepTime": false,
+            "replace": false,
+            "source": "labels"
+          }
+        },
+        {
+          "id": "filterFieldsByName",
+          "options": {
+            "include": { "names": ["Time", "hash", "length", "session"] }
+          }
+        }
+      ]
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "loki-datasource"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "showPoints": "never"
+          },
+          "unit": "ms"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Normal"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "blue",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Fast"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 64
+      },
+      "id": 14,
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "loki-datasource"
+          },
+          "expr": "avg_over_time({service_name=\"claude-code\"} | json | drop __error__, __error_details__ | event_name=`api_request` | speed=`normal` | unwrap duration_ms [$__interval]) by ()",
+          "legendFormat": "Normal",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "loki-datasource"
+          },
+          "expr": "avg_over_time({service_name=\"claude-code\"} | json | drop __error__, __error_details__ | event_name=`api_request` | speed=`fast` | unwrap duration_ms [$__interval]) by ()",
+          "legendFormat": "Fast",
+          "refId": "B"
+        }
+      ],
+      "title": "Fast Mode vs Normal — Response Time",
+      "description": "Fast Mode と Normal Mode の平均レスポンス時間比較。Fast Mode の効果を定量的に確認する。",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "loki-datasource"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "showPoints": "never"
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Normal"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "blue",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Fast"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 64
+      },
+      "id": 15,
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "loki-datasource"
+          },
+          "expr": "sum(sum_over_time({service_name=\"claude-code\"} | json | drop __error__, __error_details__ | event_name=`api_request` | speed=`normal` | unwrap output_tokens [$__interval])) / sum(sum_over_time({service_name=\"claude-code\"} | json | drop __error__, __error_details__ | event_name=`api_request` | speed=`normal` | unwrap cost_usd [$__interval]))",
+          "legendFormat": "Normal",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "loki-datasource"
+          },
+          "expr": "sum(sum_over_time({service_name=\"claude-code\"} | json | drop __error__, __error_details__ | event_name=`api_request` | speed=`fast` | unwrap output_tokens [$__interval])) / sum(sum_over_time({service_name=\"claude-code\"} | json | drop __error__, __error_details__ | event_name=`api_request` | speed=`fast` | unwrap cost_usd [$__interval]))",
+          "legendFormat": "Fast",
+          "refId": "B"
+        }
+      ],
+      "title": "Fast Mode vs Normal — Cost Efficiency (Output Tokens / $)",
+      "description": "Fast Mode と Normal Mode の 1ドルあたり出力トークン数。Fast Mode のコスト効率を評価する。",
+      "type": "timeseries"
     }
   ],
   "refresh": "30s",

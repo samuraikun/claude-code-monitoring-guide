@@ -16,3 +16,5 @@ datasources:
     access: proxy
     url: http://tempo:3200
     uid: tempo-datasource
+    jsonData:
+      grpcAddress: tempo:9095

@@ -347,6 +347,32 @@
       "title": "Cache Performance in Session",
       "description": "セッション内のキャッシュ効率。Cache Read（緑）が多いほどキャッシュが効いており、コスト効率が良い。",
       "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "loki", "uid": "loki-datasource" },
+      "gridPos": { "h": 6, "w": 24, "x": 0, "y": 40 },
+      "id": 8,
+      "options": {
+        "dedupStrategy": "none",
+        "enableLogDetails": true,
+        "prettifyLogMessage": false,
+        "showCommonLabels": false,
+        "showLabels": false,
+        "showTime": true,
+        "sortOrder": "Descending",
+        "wrapLogMessage": true
+      },
+      "targets": [
+        {
+          "datasource": { "type": "loki", "uid": "loki-datasource" },
+          "expr": "{service_name=\"claude-code\"} | json | drop __error__, __error_details__ | session_id=`$session_id` | event_name=`feedback_survey` | survey_type=`post_compact` | line_format \"compact_conversation | prompt_id={{.prompt_id}} | survey_type={{.survey_type}}\"",
+          "legendFormat": "",
+          "refId": "A"
+        }
+      ],
+      "title": "Compact Conversation Events",
+      "description": "セッション内でコンテキスト圧縮（compact conversation）が発生したタイミング。コンテキストウィンドウの限界に達した際に発生し、会話品質の低下ポイントを示す。",
+      "type": "logs"
     }
   ],
   "refresh": "10s",
