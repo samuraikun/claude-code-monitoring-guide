@@ -648,48 +648,6 @@
       "title": "Hook Execution Events",
       "description": "Hook実行完了イベントの詳細ログ。各Hookの成功・ブロッキング回数を確認する。",
       "type": "logs"
-    },
-    {
-      "datasource": { "type": "loki", "uid": "loki-datasource" },
-      "fieldConfig": {
-        "defaults": {
-          "color": { "mode": "palette-classic" },
-          "custom": { "lineWidth": 2, "fillOpacity": 10, "showPoints": "never" }
-        },
-        "overrides": [
-          {
-            "matcher": { "id": "byName", "options": "Normal — Failed" },
-            "properties": [{ "id": "color", "value": { "fixedColor": "orange", "mode": "fixed" } }]
-          },
-          {
-            "matcher": { "id": "byName", "options": "Fast — Failed" },
-            "properties": [{ "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } }]
-          }
-        ]
-      },
-      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 72 },
-      "id": 16,
-      "options": {
-        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true },
-        "tooltip": { "mode": "multi", "sort": "none" }
-      },
-      "targets": [
-        {
-          "datasource": { "type": "loki", "uid": "loki-datasource" },
-          "expr": "sum(rate({service_name=\"claude-code\"} | json | drop __error__, __error_details__ | event_name=`tool_result` | speed=`normal` | success=`false` [$__interval]))",
-          "legendFormat": "Normal — Failed",
-          "refId": "A"
-        },
-        {
-          "datasource": { "type": "loki", "uid": "loki-datasource" },
-          "expr": "sum(rate({service_name=\"claude-code\"} | json | drop __error__, __error_details__ | event_name=`tool_result` | speed=`fast` | success=`false` [$__interval]))",
-          "legendFormat": "Fast — Failed",
-          "refId": "B"
-        }
-      ],
-      "title": "Tool Failure Rate by Speed Mode",
-      "description": "Fast Mode と Normal Mode のツール失敗レート比較。Fast Mode で品質（成功率）が低下していないか検証する。",
-      "type": "timeseries"
     }
   ],
   "refresh": "30s",

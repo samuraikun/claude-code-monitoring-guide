@@ -137,40 +137,6 @@
       "title": "Tool Executions",
       "description": "ツール実行・権限待ちスパン一覧。",
       "type": "table"
-    },
-    {
-      "datasource": { "type": "tempo", "uid": "tempo-datasource" },
-      "fieldConfig": {
-        "defaults": {
-          "color": { "mode": "thresholds" },
-          "custom": { "align": "auto", "cellOptions": { "type": "auto" }, "filterable": true },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [{ "color": "green", "value": null }]
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": { "h": 6, "w": 24, "x": 0, "y": 12 },
-      "id": 5,
-      "options": {
-        "cellHeight": "sm",
-        "footer": { "show": false },
-        "showHeader": true
-      },
-      "targets": [
-        {
-          "datasource": { "type": "tempo", "uid": "tempo-datasource" },
-          "queryType": "traceql",
-          "query": "{resource.service.name=\"claude-code\" && name=\"claude_code.llm_request\" && span.speed=\"fast\"}",
-          "limit": 20,
-          "tableType": "traces",
-          "refId": "A"
-        }
-      ],
-      "title": "Fast Mode LLM Requests",
-      "description": "Fast Mode で実行された LLM リクエストのトレース一覧。Normal Mode との応答時間差をトレースレベルで比較する。",
-      "type": "table"
     }
   ],
   "refresh": "30s",
