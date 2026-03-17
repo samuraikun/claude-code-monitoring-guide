@@ -263,6 +263,24 @@
           }
         }
       ]
+    },
+    {
+      "datasource": { "type": "tempo", "uid": "tempo-datasource" },
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 34 },
+      "id": 5,
+      "options": {},
+      "targets": [
+        {
+          "datasource": { "type": "tempo", "uid": "tempo-datasource" },
+          "queryType": "traceql",
+          "query": "{resource.service.name=\"claude-code\" && span.prompt_id=\"$prompt_id\"}",
+          "limit": 20,
+          "refId": "A"
+        }
+      ],
+      "title": "Trace View (Enhanced Telemetry)",
+      "description": "Enhanced Telemetry Beta のトレースビュー。このプロンプトに対応するスパン（LLMリクエスト・ツール実行・権限待ち）をウォーターフォール表示する。CLAUDE_CODE_ENHANCED_TELEMETRY_BETA=1 が必要。",
+      "type": "traces"
     }
   ],
   "refresh": "10s",

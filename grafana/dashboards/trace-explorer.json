@@ -1,0 +1,210 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": { "type": "grafana", "uid": "-- Grafana --" },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "datasource": { "type": "tempo", "uid": "tempo-datasource" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "custom": { "align": "auto", "cellOptions": { "type": "auto" }, "filterable": true },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{ "color": "green", "value": null }]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 6, "w": 24, "x": 0, "y": 18 },
+      "id": 1,
+      "options": {
+        "cellHeight": "sm",
+        "footer": { "show": false },
+        "showHeader": true
+      },
+      "targets": [
+        {
+          "datasource": { "type": "tempo", "uid": "tempo-datasource" },
+          "queryType": "traceql",
+          "query": "{resource.service.name=\"claude-code\"}",
+          "limit": 20,
+          "tableType": "traces",
+          "refId": "A"
+        }
+      ],
+      "title": "Recent Traces (Trace ID をコピー → 下の変数欄に貼り付け)",
+      "description": "Claude Code の直近トレース一覧。Trace ID をコピーして上部の変数欄に貼り付けると、下のウォーターフォールビューに詳細が表示される。",
+      "type": "table"
+    },
+    {
+      "datasource": { "type": "tempo", "uid": "tempo-datasource" },
+      "gridPos": { "h": 16, "w": 24, "x": 0, "y": 18 },
+      "id": 2,
+      "options": {},
+      "targets": [
+        {
+          "datasource": { "type": "tempo", "uid": "tempo-datasource" },
+          "queryType": "traceql",
+          "query": "$trace_id",
+          "limit": 20,
+          "refId": "A"
+        }
+      ],
+      "title": "Trace Waterfall View (trace_id: $trace_id)",
+      "description": "選択したトレースのウォーターフォール表示。LLM リクエスト→ツール実行→権限待ちの時間分解を視覚的に確認できる。",
+      "type": "traces"
+    },
+    {
+      "datasource": { "type": "tempo", "uid": "tempo-datasource" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "custom": { "align": "auto", "cellOptions": { "type": "auto" }, "filterable": true },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{ "color": "green", "value": null }]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 6, "w": 12, "x": 0, "y": 0 },
+      "id": 3,
+      "options": {
+        "cellHeight": "sm",
+        "footer": { "show": false },
+        "showHeader": true
+      },
+      "targets": [
+        {
+          "datasource": { "type": "tempo", "uid": "tempo-datasource" },
+          "queryType": "traceql",
+          "query": "{resource.service.name=\"claude-code\" && name=\"claude_code.llm_request\"}",
+          "limit": 10,
+          "tableType": "traces",
+          "refId": "A"
+        }
+      ],
+      "title": "LLM Requests",
+      "description": "LLM API リクエストのスパン一覧。",
+      "type": "table"
+    },
+    {
+      "datasource": { "type": "tempo", "uid": "tempo-datasource" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "custom": { "align": "auto", "cellOptions": { "type": "auto" }, "filterable": true },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{ "color": "green", "value": null }]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 6, "w": 12, "x": 12, "y": 0 },
+      "id": 4,
+      "options": {
+        "cellHeight": "sm",
+        "footer": { "show": false },
+        "showHeader": true
+      },
+      "targets": [
+        {
+          "datasource": { "type": "tempo", "uid": "tempo-datasource" },
+          "queryType": "traceql",
+          "query": "{resource.service.name=\"claude-code\" && name=~\"claude_code.tool.*\"}",
+          "limit": 10,
+          "tableType": "traces",
+          "refId": "A"
+        }
+      ],
+      "title": "Tool Executions",
+      "description": "ツール実行・権限待ちスパン一覧。",
+      "type": "table"
+    },
+    {
+      "datasource": { "type": "tempo", "uid": "tempo-datasource" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "custom": { "align": "auto", "cellOptions": { "type": "auto" }, "filterable": true },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{ "color": "green", "value": null }]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 6, "w": 24, "x": 0, "y": 12 },
+      "id": 5,
+      "options": {
+        "cellHeight": "sm",
+        "footer": { "show": false },
+        "showHeader": true
+      },
+      "targets": [
+        {
+          "datasource": { "type": "tempo", "uid": "tempo-datasource" },
+          "queryType": "traceql",
+          "query": "{resource.service.name=\"claude-code\" && name=\"claude_code.llm_request\" && span.speed=\"fast\"}",
+          "limit": 20,
+          "tableType": "traces",
+          "refId": "A"
+        }
+      ],
+      "title": "Fast Mode LLM Requests",
+      "description": "Fast Mode で実行された LLM リクエストのトレース一覧。Normal Mode との応答時間差をトレースレベルで比較する。",
+      "type": "table"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 38,
+  "tags": ["claude-code", "traces", "enhanced-telemetry"],
+  "templating": {
+    "list": [
+      {
+        "current": {
+          "selected": false,
+          "text": "",
+          "value": ""
+        },
+        "description": "確認したい Trace ID を貼り付けてください",
+        "hide": 0,
+        "label": "Trace ID",
+        "name": "trace_id",
+        "options": [
+          {
+            "selected": true,
+            "text": "",
+            "value": ""
+          }
+        ],
+        "query": "",
+        "skipUrlSync": false,
+        "type": "textbox"
+      }
+    ]
+  },
+  "time": { "from": "now-3h", "to": "now" },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Claude Code - Trace Explorer",
+  "uid": "claude-code-trace-explorer",
+  "version": 6
+}
