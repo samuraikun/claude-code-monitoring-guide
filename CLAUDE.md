@@ -34,6 +34,8 @@ OpenTelemetry Collector  (otel-collector-config.yaml)
   └─ traces  ──▶ Tempo (:3200)
                     ▲
                 Grafana (:3000) — auto-provisioned dashboards
+                    │
+                    └─ render ──▶ Image Renderer (:8081)
 ```
 
 **Key data flow**: Claude Code attaches a `prompt_id` (UUID v4) to every event, enabling end-to-end tracing from `user_prompt → api_request → tool_result`.
