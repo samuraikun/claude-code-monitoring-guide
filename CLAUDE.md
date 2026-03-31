@@ -156,16 +156,19 @@ Hook-based tracking of session lifecycle events. Data flows:
 | Skill invocations | PreToolUse[Skill] | skill_name, args |
 | Agent spawns | PreToolUse[Agent], SubagentStart/Stop | agent_type, model, transcript |
 | User prompts | UserPromptSubmit | prompt text, `/command` detection |
+| All tool usage | PostToolUse | tool_name, tool_input (10KB truncated), tool_response (10KB truncated) |
+| Token usage | Stop | session token totals parsed from transcript (input/output/cache tokens) |
 
 ### DuckDB API Endpoints (localhost:8082)
 
 | Endpoint | Purpose |
 |---|---|
-| `GET /api/stats` | Overall statistics |
-| `GET /api/sessions` | Session summaries with skill/agent/command counts |
+| `GET /api/stats` | Overall statistics (includes total_tool_uses, unique_tools) |
+| `GET /api/sessions` | Session summaries with skill/agent/command/tool counts |
 | `GET /api/skills` | Skill usage aggregation |
 | `GET /api/commands` | Slash-command usage |
 | `GET /api/agents` | Agent type distribution |
+| `GET /api/tools` | Tool usage aggregation (group_by=day supported) |
 | `GET /api/models` | Model usage distribution |
 | `GET /api/projects` | Project (cwd) usage with skill/agent counts |
 | `GET /api/timeline?session_id=X` | All events for a session |

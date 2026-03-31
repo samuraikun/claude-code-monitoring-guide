@@ -19,7 +19,7 @@ OpenTelemetry Collector
                     │
                     └─ lifecycle ──▶ DuckDB API (:8082)
 
-Claude Code Hooks (lifecycle-logger.sh)
+Claude Code Hooks (lifecycle-logger-hook, Go binary)
   └─ events.jsonl ──▶ DuckDB API (:8082) ──▶ Grafana Infinity DS
 ```
 
@@ -284,12 +284,12 @@ Dashboard for exploring Enhanced Telemetry Beta trace spans including TTFT, tool
 
 **UID**: `claude-code-lifecycle`
 
-Dashboard for tracking which skills, commands, and agents are used per Claude Code session. Powered by DuckDB + Claude Code Hooks.
+Dashboard for tracking which skills, commands, agents, and tools are used per Claude Code session. Powered by DuckDB + Claude Code Hooks (Go binary).
 
 **How to use**:
 1. View overview stats and usage breakdown across all sessions
 2. Click a `session_id` in the Session List to drill down
-3. Review the Session Event Timeline showing the full lifecycle
+3. Review the Session Event Timeline showing the full lifecycle (including all tool uses)
 
 **Panels**:
 
@@ -299,8 +299,10 @@ Dashboard for tracking which skills, commands, and agents are used per Claude Co
 | Top Skills by Usage | Bar chart | Skill invocation count ranking (e.g., commit, review) |
 | Command Distribution | Bar chart | Slash-command usage (detected from UserPromptSubmit) |
 | Agent Types | Bar chart | Agent type spawn count (Explore, Plan, general-purpose) |
-| Session List | Table | All sessions with model, prompt/skill/agent/command counts. Click session_id to drill down |
-| Session Event Timeline | Table | All lifecycle events for a session in chronological order |
+| Total Tool Uses / Unique Tools | Stat | PostToolUse hook-based stats — all tool types (Read, Edit, Bash, Grep, etc.) |
+| Top Tools by Usage | Bar chart | Tool invocation count ranking across all tool types |
+| Session List | Table | All sessions with model, prompt/skill/agent/command/tool counts. Click session_id to drill down |
+| Session Event Timeline | Table | All lifecycle events for a session in chronological order (including tool_use events) |
 
 ---
 
@@ -308,7 +310,7 @@ Dashboard for tracking which skills, commands, and agents are used per Claude Co
 
 **UID**: `claude-code-global-usage`
 
-Dashboard for tracking cross-session skill, command, and agent usage trends across all Claude Code sessions. Includes model and project-level analysis.
+Dashboard for tracking cross-session skill, command, agent, and tool usage trends across all Claude Code sessions. Includes model, project-level, and tool-level analysis.
 
 **Panels**:
 
@@ -317,6 +319,8 @@ Dashboard for tracking cross-session skill, command, and agent usage trends acro
 | Total Sessions / Skill Invocations / Agent Spawns / Commands / Unique Skills / Unique Agent Types | Stat | Global KPI cards (no session filter) |
 | Daily Sessions / Daily Skill Invocations / Daily Agent Spawns | Time series (bar) | Usage trends over time |
 | Top Skills / Top Commands / Top Agent Types | Bar chart | Cross-session usage rankings |
+| Daily Tool Usage | Time series | Tool invocation count trends over time |
+| Tool Distribution | Bar chart | Cross-session tool usage ranking (Read, Edit, Bash, Grep, etc.) |
 | Model Usage | Bar chart | Session count by LLM model |
 | Top Projects | Table | Session/skill/agent counts per working directory |
 
@@ -366,7 +370,13 @@ Requires `CLAUDE_CODE_ENHANCED_TELEMETRY_BETA=1`. These spans are sent to Tempo 
 │   ├── schema.sql                  # DuckDB table definitions
 │   └── go.mod / go.sum             # Go module dependencies
 ├── hooks/
-│   └── lifecycle-logger.sh         # Hook script for lifecycle event capture
+│   ├── lifecycle-logger/           # Go module for hook binary
+│   │   ├── main.go                 # Event handlers (PostToolUse, Stop w/ token usage, etc.)
+│   │   ├── truncate.go             # 10KB JSON truncation for tool_input/tool_response
+│   │   ├── transcript.go           # Transcript parsing for session token usage
+│   │   └── *_test.go               # Unit tests (23 tests)
+│   ├── lifecycle-logger-hook       # Compiled Go binary (gitignored, build with go build)
+│   └── lifecycle-logger.sh         # Legacy bash hook script (no longer referenced)
 ├── claude_code_roi_full.md         # Detailed ROI measurement guide
 ├── troubleshooting.md              # Troubleshooting
 └── report-generation-prompt.md    # Automated report generation prompt template
