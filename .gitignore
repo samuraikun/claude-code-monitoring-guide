@@ -1,5 +1,7 @@
 tmp/
 .playwright-mcp/
 data/
-# Compiled hook binary
+.claude/settings.local.json
+# Compiled binaries
 hooks/lifecycle-logger-hook
+duckdb-api/duckdb-api

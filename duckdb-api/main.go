@@ -166,12 +166,15 @@ func handleSessions(db *DB, w http.ResponseWriter, r *http.Request) {
 
 	rows, err := db.Query(`
 		WITH session_starts AS (
-			SELECT session_id, event_timestamp AS started_at, model, cwd, source
+			SELECT session_id, MIN(event_timestamp) AS started_at,
+				FIRST(model) AS model, FIRST(cwd) AS cwd, FIRST(source) AS source
 			FROM lifecycle_events WHERE event_type = 'session_start'
+			GROUP BY session_id
 		),
 		session_ends AS (
-			SELECT session_id, event_timestamp AS ended_at
+			SELECT session_id, MAX(event_timestamp) AS ended_at
 			FROM lifecycle_events WHERE event_type = 'session_end'
+			GROUP BY session_id
 		),
 		session_skills AS (
 			SELECT session_id, COUNT(*) AS skill_count
