@@ -36,6 +36,10 @@ type LifecycleEvent struct {
 	AgentPrompt     *string `json:"agent_prompt"`
 	TranscriptPath  *string `json:"transcript_path"`
 	LastMessage     *string `json:"last_message"`
+	ToolName        *string `json:"tool_name"`
+	ToolInput       *string `json:"tool_input"`
+	ToolResponse    *string `json:"tool_response"`
+	TokenUsage      *string `json:"token_usage"`
 }
 
 // DB wraps DuckDB connection with import state.
@@ -59,6 +63,19 @@ func NewDB(dbPath string) (*DB, error) {
 
 	if _, err := conn.Exec(string(schemaSQL)); err != nil {
 		return nil, fmt.Errorf("exec schema: %w", err)
+	}
+
+	// Schema migrations: add new columns for existing tables
+	migrations := []string{
+		"ALTER TABLE lifecycle_events ADD COLUMN IF NOT EXISTS tool_name VARCHAR",
+		"ALTER TABLE lifecycle_events ADD COLUMN IF NOT EXISTS tool_input VARCHAR",
+		"ALTER TABLE lifecycle_events ADD COLUMN IF NOT EXISTS tool_response VARCHAR",
+		"ALTER TABLE lifecycle_events ADD COLUMN IF NOT EXISTS token_usage VARCHAR",
+	}
+	for _, m := range migrations {
+		if _, err := conn.Exec(m); err != nil {
+			log.Printf("WARN: migration: %v", err)
+		}
 	}
 
 	// Create import state table to persist byte offset across restarts
@@ -205,8 +222,9 @@ func (db *DB) ImportNewEvents(jsonlPath string) error {
 			prompt_text, detected_command,
 			skill_name, skill_args,
 			agent_id, agent_type, subagent_model, agent_prompt,
-			transcript_path, last_message
-		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+			transcript_path, last_message,
+			tool_name, tool_input, tool_response, token_usage
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`)
 	if err != nil {
 		return fmt.Errorf("prepare stmt: %w", err)
@@ -230,6 +248,7 @@ func (db *DB) ImportNewEvents(jsonlPath string) error {
 			ev.SkillName, ev.SkillArgs,
 			ev.AgentID, ev.AgentType, ev.SubagentModel, ev.AgentPrompt,
 			ev.TranscriptPath, ev.LastMessage,
+			ev.ToolName, ev.ToolInput, ev.ToolResponse, ev.TokenUsage,
 		)
 		if err != nil {
 			log.Printf("WARN: skip event insert: %v", err)

@@ -1,3 +1,5 @@
 tmp/
 .playwright-mcp/
 data/
+# Compiled hook binary
+hooks/lifecycle-logger-hook

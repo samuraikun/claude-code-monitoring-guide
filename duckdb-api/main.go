@@ -52,6 +52,7 @@ func main() {
 	mux.HandleFunc("GET /api/agents", makeHandler(db, handleAgents))
 	mux.HandleFunc("GET /api/models", makeHandler(db, handleModels))
 	mux.HandleFunc("GET /api/projects", makeHandler(db, handleProjects))
+	mux.HandleFunc("GET /api/tools", makeHandler(db, handleTools))
 	mux.HandleFunc("GET /api/timeline", makeHandler(db, handleTimeline))
 	mux.HandleFunc("POST /api/query", makeHandler(db, handleQuery))
 
@@ -125,7 +126,9 @@ func handleStats(db *DB, w http.ResponseWriter, r *http.Request) {
 			COUNT(CASE WHEN event_type IN ('agent_start', 'agent_invoke') THEN 1 END) AS total_agent_spawns,
 			COUNT(CASE WHEN event_type = 'user_prompt' AND detected_command IS NOT NULL THEN 1 END) AS total_command_invocations,
 			COUNT(DISTINCT CASE WHEN event_type = 'skill_invoke' THEN skill_name END) AS unique_skills,
-			COUNT(DISTINCT CASE WHEN event_type IN ('agent_start', 'agent_invoke') THEN agent_type END) AS unique_agent_types
+			COUNT(DISTINCT CASE WHEN event_type IN ('agent_start', 'agent_invoke') THEN agent_type END) AS unique_agent_types,
+			COUNT(CASE WHEN event_type = 'tool_use' THEN 1 END) AS total_tool_uses,
+			COUNT(DISTINCT CASE WHEN event_type = 'tool_use' THEN tool_name END) AS unique_tools
 		FROM lifecycle_events
 		WHERE 1=1`+clause,
 		args...)
@@ -189,6 +192,11 @@ func handleSessions(db *DB, w http.ResponseWriter, r *http.Request) {
 			SELECT session_id, COUNT(*) AS prompt_count
 			FROM lifecycle_events WHERE event_type = 'user_prompt'
 			GROUP BY session_id
+		),
+		session_tools AS (
+			SELECT session_id, COUNT(*) AS tool_count
+			FROM lifecycle_events WHERE event_type = 'tool_use'
+			GROUP BY session_id
 		)
 		SELECT
 			s.session_id,
@@ -199,13 +207,15 @@ func handleSessions(db *DB, w http.ResponseWriter, r *http.Request) {
 			COALESCE(p.prompt_count, 0) AS prompt_count,
 			COALESCE(sk.skill_count, 0) AS skill_count,
 			COALESCE(a.agent_count, 0) AS agent_count,
-			COALESCE(c.command_count, 0) AS command_count
+			COALESCE(c.command_count, 0) AS command_count,
+			COALESCE(tl.tool_count, 0) AS tool_count
 		FROM session_starts s
 		LEFT JOIN session_ends e ON s.session_id = e.session_id
 		LEFT JOIN session_skills sk ON s.session_id = sk.session_id
 		LEFT JOIN session_agents a ON s.session_id = a.session_id
 		LEFT JOIN session_commands c ON s.session_id = c.session_id
 		LEFT JOIN session_prompts p ON s.session_id = p.session_id
+		LEFT JOIN session_tools tl ON s.session_id = tl.session_id
 		ORDER BY s.started_at DESC
 		LIMIT 100
 	`)
@@ -390,12 +400,53 @@ func handleTimeline(db *DB, w http.ResponseWriter, r *http.Request) {
 			event_type,
 			event_timestamp,
 			session_id,
-			COALESCE(skill_name, detected_command, agent_type, source, '') AS detail,
-			COALESCE(skill_args, agent_prompt, prompt_text, last_message, '') AS extra
+			COALESCE(tool_name, skill_name, detected_command, agent_type, source, '') AS detail,
+			COALESCE(tool_input, skill_args, agent_prompt, prompt_text, last_message, '') AS extra
 		FROM lifecycle_events
 		WHERE session_id = ?
 		ORDER BY event_timestamp ASC
 	`, sessionID)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	writeJSON(w, rows)
+}
+
+func handleTools(db *DB, w http.ResponseWriter, r *http.Request) {
+	groupBy := r.URL.Query().Get("group_by")
+	clause, args := sessionFilter(r)
+
+	if groupBy == "day" {
+		rows, err := db.Query(`
+			SELECT
+				CAST(event_timestamp AS DATE) AS date,
+				COUNT(*) AS invocation_count
+			FROM lifecycle_events
+			WHERE event_type = 'tool_use'`+clause+`
+			GROUP BY CAST(event_timestamp AS DATE)
+			ORDER BY date
+		`, args...)
+		if err != nil {
+			writeError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+		writeJSON(w, rows)
+		return
+	}
+
+	rows, err := db.Query(`
+		SELECT
+			tool_name,
+			COUNT(*) AS invocation_count,
+			COUNT(DISTINCT session_id) AS session_count,
+			MIN(event_timestamp) AS first_used,
+			MAX(event_timestamp) AS last_used
+		FROM lifecycle_events
+		WHERE event_type = 'tool_use' AND tool_name IS NOT NULL`+clause+`
+		GROUP BY tool_name
+		ORDER BY invocation_count DESC
+	`, args...)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, err.Error())
 		return

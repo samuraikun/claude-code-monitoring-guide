@@ -14,5 +14,9 @@ CREATE TABLE IF NOT EXISTS lifecycle_events (
     subagent_model  VARCHAR,
     agent_prompt    VARCHAR,
     transcript_path VARCHAR,
-    last_message    VARCHAR
+    last_message    VARCHAR,
+    tool_name       VARCHAR,
+    tool_input      VARCHAR,
+    tool_response   VARCHAR,
+    token_usage     VARCHAR
 );

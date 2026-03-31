@@ -461,6 +461,155 @@
     {
       "collapsed": false,
       "gridPos": { "h": 1, "w": 24, "x": 0, "y": 14 },
+      "id": 104,
+      "title": "Tool Usage",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "duckdb-lifecycle" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "semi-dark-blue", "value": null }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 0, "y": 15 },
+      "id": 40,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "/^total_tool_uses$/", "values": false },
+        "textMode": "auto"
+      },
+      "description": "PostToolUse hookで記録された全ツール使用の総数。Read, Edit, Bash, Grep, Write等を含む。",
+      "title": "Total Tool Uses",
+      "type": "stat",
+      "targets": [
+        {
+          "columns": [],
+          "filters": [],
+          "format": "table",
+          "global_query_id": "",
+          "refId": "A",
+          "root_selector": "",
+          "source": "url",
+          "type": "json",
+          "url": "http://duckdb-api:8082/api/stats?session_id=${session_id}",
+          "url_options": { "method": "GET" }
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "duckdb-lifecycle" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "semi-dark-green", "value": null }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 4, "y": 15 },
+      "id": 41,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "/^unique_tools$/", "values": false },
+        "textMode": "auto"
+      },
+      "description": "使用されたツールのユニーク数。Read, Edit, Bash, Grep, Write, Glob等の種類数。",
+      "title": "Unique Tools",
+      "type": "stat",
+      "targets": [
+        {
+          "columns": [],
+          "filters": [],
+          "format": "table",
+          "global_query_id": "",
+          "refId": "A",
+          "root_selector": "",
+          "source": "url",
+          "type": "json",
+          "url": "http://duckdb-api:8082/api/stats?session_id=${session_id}",
+          "url_options": { "method": "GET" }
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "duckdb-lifecycle" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "fillOpacity": 80,
+            "gradientMode": "none",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "lineWidth": 1,
+            "scaleDistribution": { "type": "linear" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 16, "x": 8, "y": 15 },
+      "id": 42,
+      "options": {
+        "barRadius": 0.1,
+        "barWidth": 0.8,
+        "fullHighlight": false,
+        "groupWidth": 0.7,
+        "legend": { "calcs": [], "displayMode": "list", "placement": "bottom" },
+        "orientation": "horizontal",
+        "showValue": "auto",
+        "stacking": "none",
+        "tooltip": { "mode": "single", "sort": "none" },
+        "xField": "tool_name",
+        "xTickLabelRotation": 0
+      },
+      "description": "ツール別の使用回数ランキング。PostToolUse hookで記録された全ツール(Read, Edit, Bash, Grep等)の使用頻度を比較。",
+      "title": "Top Tools by Usage",
+      "type": "barchart",
+      "targets": [
+        {
+          "columns": [
+            { "selector": "tool_name", "text": "Tool", "type": "string" },
+            { "selector": "invocation_count", "text": "Count", "type": "number" }
+          ],
+          "filters": [],
+          "format": "table",
+          "global_query_id": "",
+          "refId": "A",
+          "root_selector": "",
+          "source": "url",
+          "type": "json",
+          "url": "http://duckdb-api:8082/api/tools?session_id=${session_id}",
+          "url_options": { "method": "GET" }
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 23 },
       "id": 102,
       "title": "Sessions",
       "type": "row"
@@ -505,7 +654,7 @@
           }
         ]
       },
-      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 15 },
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 24 },
       "id": 20,
       "options": {
         "cellHeight": "sm",
@@ -527,7 +676,8 @@
             { "selector": "prompt_count", "text": "prompt_count", "type": "number" },
             { "selector": "skill_count", "text": "skill_count", "type": "number" },
             { "selector": "agent_count", "text": "agent_count", "type": "number" },
-            { "selector": "command_count", "text": "command_count", "type": "number" }
+            { "selector": "command_count", "text": "command_count", "type": "number" },
+            { "selector": "tool_count", "text": "tool_count", "type": "number" }
           ],
           "filters": [],
           "format": "table",
@@ -543,7 +693,7 @@
     },
     {
       "collapsed": false,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 25 },
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 34 },
       "id": 103,
       "title": "Session Drill-Down",
       "type": "row"
@@ -579,7 +729,8 @@
                   "agent_invoke": { "text": "Agent (invoke)", "color": "orange" },
                   "agent_start": { "text": "Agent Start", "color": "orange" },
                   "agent_stop": { "text": "Agent Stop", "color": "orange" },
-                  "stop": { "text": "Stop", "color": "purple" }
+                  "stop": { "text": "Stop", "color": "purple" },
+                  "tool_use": { "text": "Tool Use", "color": "semi-dark-blue" }
                 }}
               ]}
             ]
@@ -594,7 +745,7 @@
           }
         ]
       },
-      "gridPos": { "h": 12, "w": 24, "x": 0, "y": 26 },
+      "gridPos": { "h": 12, "w": 24, "x": 0, "y": 35 },
       "id": 30,
       "options": {
         "cellHeight": "sm",
