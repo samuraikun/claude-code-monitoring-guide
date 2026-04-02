@@ -54,6 +54,7 @@ func main() {
 	mux.HandleFunc("GET /api/projects", makeHandler(db, handleProjects))
 	mux.HandleFunc("GET /api/tools", makeHandler(db, handleTools))
 	mux.HandleFunc("GET /api/timeline", makeHandler(db, handleTimeline))
+	mux.HandleFunc("GET /api/prompt-durations", makeHandler(db, handlePromptDurations))
 	mux.HandleFunc("POST /api/query", makeHandler(db, handleQuery))
 
 	addr := ":" + *port
@@ -211,7 +212,8 @@ func handleSessions(db *DB, w http.ResponseWriter, r *http.Request) {
 			COALESCE(sk.skill_count, 0) AS skill_count,
 			COALESCE(a.agent_count, 0) AS agent_count,
 			COALESCE(c.command_count, 0) AS command_count,
-			COALESCE(tl.tool_count, 0) AS tool_count
+			COALESCE(tl.tool_count, 0) AS tool_count,
+			COALESCE(EXTRACT(EPOCH FROM (e.ended_at - s.started_at))::INTEGER, 0) AS duration_seconds
 		FROM session_starts s
 		LEFT JOIN session_ends e ON s.session_id = e.session_id
 		LEFT JOIN session_skills sk ON s.session_id = sk.session_id
@@ -408,6 +410,53 @@ func handleTimeline(db *DB, w http.ResponseWriter, r *http.Request) {
 		FROM lifecycle_events
 		WHERE session_id = ?
 		ORDER BY event_timestamp ASC
+	`, sessionID)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	writeJSON(w, rows)
+}
+
+func handlePromptDurations(db *DB, w http.ResponseWriter, r *http.Request) {
+	sessionID := r.URL.Query().Get("session_id")
+	if sessionID == "" {
+		writeError(w, http.StatusBadRequest, "session_id is required")
+		return
+	}
+
+	rows, err := db.Query(`
+		WITH deduped AS (
+			SELECT DISTINCT event_type, event_timestamp, session_id, prompt_text
+			FROM lifecycle_events
+			WHERE session_id = ? AND event_type IN ('user_prompt', 'stop')
+		),
+		prompts AS (
+			SELECT
+				event_timestamp AS prompt_start,
+				prompt_text,
+				ROW_NUMBER() OVER (ORDER BY event_timestamp) AS prompt_num
+			FROM deduped WHERE event_type = 'user_prompt'
+		),
+		stops AS (
+			SELECT
+				event_timestamp AS stop_time,
+				ROW_NUMBER() OVER (ORDER BY event_timestamp) AS stop_num
+			FROM deduped
+			WHERE event_type = 'stop'
+			  AND event_timestamp >= (SELECT MIN(event_timestamp) FROM deduped WHERE event_type = 'user_prompt')
+		)
+		SELECT
+			p.prompt_num,
+			p.prompt_start,
+			s.stop_time AS prompt_end,
+			COALESCE(EXTRACT(EPOCH FROM (s.stop_time - p.prompt_start)), 0)::INTEGER AS duration_seconds,
+			SUM(COALESCE(EXTRACT(EPOCH FROM (s.stop_time - p.prompt_start)), 0)::INTEGER)
+				OVER (ORDER BY p.prompt_num) AS cumulative_seconds,
+			LEFT(COALESCE(p.prompt_text, ''), 80) AS prompt_preview
+		FROM prompts p
+		LEFT JOIN stops s ON p.prompt_num = s.stop_num
+		ORDER BY p.prompt_num
 	`, sessionID)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, err.Error())

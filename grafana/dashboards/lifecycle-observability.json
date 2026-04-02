@@ -651,6 +651,13 @@
           {
             "matcher": { "id": "byName", "options": "ended_at" },
             "properties": [{ "id": "custom.width", "value": 180 }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "duration_seconds" },
+            "properties": [
+              { "id": "unit", "value": "s" },
+              { "id": "custom.width", "value": 120 }
+            ]
           }
         ]
       },
@@ -677,7 +684,8 @@
             { "selector": "skill_count", "text": "skill_count", "type": "number" },
             { "selector": "agent_count", "text": "agent_count", "type": "number" },
             { "selector": "command_count", "text": "command_count", "type": "number" },
-            { "selector": "tool_count", "text": "tool_count", "type": "number" }
+            { "selector": "tool_count", "text": "tool_count", "type": "number" },
+            { "selector": "duration_seconds", "text": "duration_seconds", "type": "number" }
           ],
           "filters": [],
           "format": "table",
@@ -772,6 +780,418 @@
           "source": "url",
           "type": "json",
           "url": "http://duckdb-api:8082/api/timeline?session_id=${session_id}",
+          "url_options": { "method": "GET" }
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 47 },
+      "id": 104,
+      "title": "Prompt Duration Analysis",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "duckdb-lifecycle" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "unit": "s",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 300 },
+              { "color": "red", "value": 600 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 48 },
+      "id": 50,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["sum"], "fields": "/^duration_seconds$/", "values": false },
+        "textMode": "auto"
+      },
+      "description": "セッション内の全プロンプト処理にかかった合計時間。user_prompt発生からstopまでの処理時間を累積。",
+      "title": "Session Active Time",
+      "type": "stat",
+      "targets": [
+        {
+          "columns": [
+            { "selector": "duration_seconds", "text": "duration_seconds", "type": "number" }
+          ],
+          "filters": [],
+          "format": "table",
+          "global_query_id": "",
+          "refId": "A",
+          "root_selector": "",
+          "source": "url",
+          "type": "json",
+          "url": "http://duckdb-api:8082/api/prompt-durations?session_id=${session_id}",
+          "url_options": { "method": "GET" }
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "duckdb-lifecycle" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "unit": "s",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 120 },
+              { "color": "red", "value": 300 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 48 },
+      "id": 51,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["mean"], "fields": "/^duration_seconds$/", "values": false },
+        "textMode": "auto"
+      },
+      "description": "プロンプトあたりの平均処理時間。",
+      "title": "Avg Prompt Duration",
+      "type": "stat",
+      "targets": [
+        {
+          "columns": [
+            { "selector": "duration_seconds", "text": "duration_seconds", "type": "number" }
+          ],
+          "filters": [],
+          "format": "table",
+          "global_query_id": "",
+          "refId": "A",
+          "root_selector": "",
+          "source": "url",
+          "type": "json",
+          "url": "http://duckdb-api:8082/api/prompt-durations?session_id=${session_id}",
+          "url_options": { "method": "GET" }
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "duckdb-lifecycle" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "unit": "s",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 180 },
+              { "color": "red", "value": 600 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 48 },
+      "id": 52,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["max"], "fields": "/^duration_seconds$/", "values": false },
+        "textMode": "auto"
+      },
+      "description": "最も処理時間が長かったプロンプトの所要時間。",
+      "title": "Longest Prompt",
+      "type": "stat",
+      "targets": [
+        {
+          "columns": [
+            { "selector": "duration_seconds", "text": "duration_seconds", "type": "number" }
+          ],
+          "filters": [],
+          "format": "table",
+          "global_query_id": "",
+          "refId": "A",
+          "root_selector": "",
+          "source": "url",
+          "type": "json",
+          "url": "http://duckdb-api:8082/api/prompt-durations?session_id=${session_id}",
+          "url_options": { "method": "GET" }
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "duckdb-lifecycle" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "blue", "value": null }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 48 },
+      "id": 53,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["count"], "fields": "/^prompt_num$/", "values": false },
+        "textMode": "auto"
+      },
+      "description": "セッション内のプロンプト数。",
+      "title": "Prompt Count",
+      "type": "stat",
+      "targets": [
+        {
+          "columns": [
+            { "selector": "prompt_num", "text": "prompt_num", "type": "number" }
+          ],
+          "filters": [],
+          "format": "table",
+          "global_query_id": "",
+          "refId": "A",
+          "root_selector": "",
+          "source": "url",
+          "type": "json",
+          "url": "http://duckdb-api:8082/api/prompt-durations?session_id=${session_id}",
+          "url_options": { "method": "GET" }
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "duckdb-lifecycle" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "custom": {
+            "align": "auto",
+            "cellOptions": { "type": "auto" },
+            "filterable": true,
+            "inspect": true
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{ "color": "green", "value": null }]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "prompt_num" },
+            "properties": [{ "id": "custom.width", "value": 80 }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "prompt_preview" },
+            "properties": [{ "id": "custom.width", "value": 400 }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "prompt_start" },
+            "properties": [{ "id": "custom.width", "value": 180 }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "prompt_end" },
+            "properties": [{ "id": "custom.width", "value": 180 }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "duration_seconds" },
+            "properties": [
+              { "id": "unit", "value": "s" },
+              { "id": "thresholds", "value": {
+                "mode": "absolute",
+                "steps": [
+                  { "color": "green", "value": null },
+                  { "color": "yellow", "value": 120 },
+                  { "color": "red", "value": 300 }
+                ]
+              }},
+              { "id": "custom.cellOptions", "value": { "mode": "basic", "type": "color-background" } }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "cumulative_seconds" },
+            "properties": [{ "id": "unit", "value": "s" }]
+          }
+        ]
+      },
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 52 },
+      "id": 54,
+      "options": {
+        "cellHeight": "sm",
+        "footer": { "countRows": true, "enablePagination": true, "fields": "", "reducer": ["sum"], "show": true },
+        "showHeader": true,
+        "sortBy": [{ "desc": false, "displayName": "prompt_num" }]
+      },
+      "description": "セッション内の各プロンプトの処理時間内訳。user_promptイベント発生からstopイベントまでの経過時間。",
+      "title": "Per-Prompt Duration Breakdown ($session_id)",
+      "type": "table",
+      "targets": [
+        {
+          "columns": [
+            { "selector": "prompt_num", "text": "Prompt #", "type": "number" },
+            { "selector": "prompt_preview", "text": "Prompt", "type": "string" },
+            { "selector": "prompt_start", "text": "Start", "type": "string" },
+            { "selector": "prompt_end", "text": "End", "type": "string" },
+            { "selector": "duration_seconds", "text": "Duration (s)", "type": "number" },
+            { "selector": "cumulative_seconds", "text": "Cumulative (s)", "type": "number" }
+          ],
+          "filters": [],
+          "format": "table",
+          "global_query_id": "",
+          "refId": "A",
+          "root_selector": "",
+          "source": "url",
+          "type": "json",
+          "url": "http://duckdb-api:8082/api/prompt-durations?session_id=${session_id}",
+          "url_options": { "method": "GET" }
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "duckdb-lifecycle" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisLabel": "Duration (s)",
+            "axisPlacement": "auto",
+            "fillOpacity": 80,
+            "gradientMode": "scheme",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "lineWidth": 1,
+            "scaleDistribution": { "type": "linear" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "unit": "s",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 120 },
+              { "color": "red", "value": 300 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 62 },
+      "id": 55,
+      "options": {
+        "barRadius": 0.1,
+        "barWidth": 0.8,
+        "fullHighlight": false,
+        "groupWidth": 0.7,
+        "legend": { "calcs": [], "displayMode": "list", "placement": "bottom" },
+        "orientation": "vertical",
+        "showValue": "auto",
+        "stacking": "none",
+        "tooltip": { "mode": "single", "sort": "none" },
+        "xField": "prompt_num",
+        "xTickLabelRotation": 0
+      },
+      "description": "各プロンプトの処理時間をバーチャートで可視化。特に時間のかかったプロンプトを視覚的に特定。",
+      "title": "Prompt Duration Distribution",
+      "type": "barchart",
+      "targets": [
+        {
+          "columns": [
+            { "selector": "prompt_num", "text": "Prompt #", "type": "string" },
+            { "selector": "duration_seconds", "text": "Duration (s)", "type": "number" }
+          ],
+          "filters": [],
+          "format": "table",
+          "global_query_id": "",
+          "refId": "A",
+          "root_selector": "",
+          "source": "url",
+          "type": "json",
+          "url": "http://duckdb-api:8082/api/prompt-durations?session_id=${session_id}",
+          "url_options": { "method": "GET" }
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "duckdb-lifecycle" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisLabel": "Cumulative (s)",
+            "axisPlacement": "auto",
+            "fillOpacity": 80,
+            "gradientMode": "scheme",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "lineWidth": 1,
+            "scaleDistribution": { "type": "linear" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "unit": "s",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "blue", "value": null },
+              { "color": "semi-dark-blue", "value": 300 },
+              { "color": "dark-blue", "value": 600 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 62 },
+      "id": 56,
+      "options": {
+        "barRadius": 0.1,
+        "barWidth": 0.8,
+        "fullHighlight": false,
+        "groupWidth": 0.7,
+        "legend": { "calcs": [], "displayMode": "list", "placement": "bottom" },
+        "orientation": "vertical",
+        "showValue": "auto",
+        "stacking": "none",
+        "tooltip": { "mode": "single", "sort": "none" },
+        "xField": "prompt_num",
+        "xTickLabelRotation": 0
+      },
+      "description": "プロンプトごとの累積処理時間の推移。時間の蓄積パターンを把握し、セッションのどの段階で多くの時間を消費したかを可視化。",
+      "title": "Cumulative Time Progression",
+      "type": "barchart",
+      "targets": [
+        {
+          "columns": [
+            { "selector": "prompt_num", "text": "Prompt #", "type": "string" },
+            { "selector": "cumulative_seconds", "text": "Cumulative (s)", "type": "number" }
+          ],
+          "filters": [],
+          "format": "table",
+          "global_query_id": "",
+          "refId": "A",
+          "root_selector": "",
+          "source": "url",
+          "type": "json",
+          "url": "http://duckdb-api:8082/api/prompt-durations?session_id=${session_id}",
           "url_options": { "method": "GET" }
         }
       ]
